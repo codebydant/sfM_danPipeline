@@ -2,28 +2,30 @@
            HEADERS
 **********************************/
 
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/xfeatures2d.hpp>
-#include <opencv2/viz.hpp>
-#include <opencv2/viz/vizcore.hpp>
-#include <opencv2/viz/viz3d.hpp>
+#include "opencv2/opencv.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/xfeatures2d.hpp"
+#include "opencv2/viz.hpp"
+#include "opencv2/viz/vizcore.hpp"
+#include "opencv2/viz/viz3d.hpp"
 #include <eigen3/Eigen/Dense>
 #include <string>
 #include <mutex>
 
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/io/openni_grabber.h>
-#include <pcl/console/parse.h>
-#include <pcl/common/transforms.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/visualization/pcl_visualizer.h>
+#include "pcl/io/pcd_io.h"
+#include "pcl/io/ply_io.h"
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
+#include "pcl/io/openni_grabber.h"
+#include "pcl/console/parse.h"
+#include "pcl/common/transforms.h"
+#include "pcl/visualization/cloud_viewer.h"
+#include "pcl/visualization/pcl_visualizer.h"
+
 
 /*********************************
         FUNCIONES
@@ -61,10 +63,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MatToPoinXYZ(cv::Mat depthMat){
 
 
    // calibration parameters
-       float const fx_d = 5.9421434211923247e+02;
-       float const fy_d = 5.9104053696870778e+02;
-       float const cx_d = 3.3930780975300314e+02;
-       float const cy_d = 2.4273913761751615e+02;
+
+       float const fx_d = 409;
+       float const fy_d = 408;
+       float const cx_d = 237;
+       float const cy_d = 171;
 
        unsigned char* p = depthMat.data;
        for (int i = 0; i<depthMat.rows; i++)
@@ -192,14 +195,15 @@ int cont =0;
               keypoints1 = obtenerKeypoints(image1);
               keypoints2 = obtenerKeypoints(image2);
 
-              std::vector<cv::DMatch> matches = obtenerMatches(image1,image2, keypoints1,keypoints2);
+              std::vector<cv::DMatch> matches = obtenerMatches(image1,
+                                                               image2, keypoints1,keypoints2);
               points1= keypoints2F( keypoints1, matches);
               points2= keypoints2F( keypoints2, matches);
 
              // std::cout <<"points1 : "<< "\n" << points1 << std::endl;
 //              std::cout <<"points2 : "<< "\n" << points2 << std::endl;
 
-
+/*
               for (int i = 0; i < image1.cols; i++){
                     for (int j = 0; j < image1.rows; j++) {
 
@@ -207,7 +211,7 @@ int cont =0;
                           points_image2.push_back(image2.at<cv::Point2d>(cv::Point(i, j)));
                      }
                   }
-
+*/
 
 
 
@@ -233,12 +237,23 @@ int cont =0;
 
 
               // Find the essential between image 1 and image 2
-              cv::Mat inliers;
+ cv::Mat inliers;
+              cv::Mat matrixFundamental = cv::findFundamentalMat(points1,points2,cv::FM_RANSAC,0.1,0.99,inliers);
+              std::cout<< "total inliers" << inliers.size()<<std::endl;
 
-              matrixE12 = cv::findEssentialMat(points1, points2,cameraMatrix,cv::RANSAC,0.999, 1.0,inliers);
+              matrixE12 = cameraMatrix.t()*matrixFundamental*cameraMatrix;
+               std::cout <<"Matrix Essential us: "<< "\n" << matrixE12 << std::endl;
 
-              cv::drawMatches(image1,keypoints1,image2,keypoints2,matches,matchImage,cv::Scalar::all(-1),
-              cv::Scalar::all(-1),inliers,2);
+cv::Mat h;
+            //  matrixE12 = cv::findEssentialMat(points1, points2,cameraMatrix,cv::RANSAC,0.99, 0.1,inliers);
+matrixE12 = (cv::Mat_<double>(3,3) <<
+
+0.001905132905183011, -0.3512859268097117, 0.01888495989911259,
+ 0.2692589029874893, -0.006758526413464595, -0.6536178451838158,
+ -0.01513595230914446, 0.6133743732940988, -0.004287826651009312);
+          matchImage= imageMatching( image1,image2);
+              cv::imshow("matching",matchImage);
+              cv::waitKey(0);
 
 
               std::cout <<"Matrix Essential: "<< "\n" << matrixE12 << std::endl;
@@ -298,8 +313,8 @@ int cont =0;
 
               for (int i=0;i<inliers.rows;i++) {
 
-                      inlierPtsImage1.push_back(cv::Point2d(points_image1[i].x,points_image1[i].y));
-                      inlierPtsImage2.push_back(cv::Point2d(points_image2[i].x,points_image2[i].y));
+                      inlierPtsImage1.push_back(cv::Point2d(points1[i].x,points1[i].y));
+                      inlierPtsImage2.push_back(cv::Point2d(points2[i].x,points2[i].y));
               }
 
 
@@ -314,7 +329,7 @@ int cont =0;
 
                  pointCloudOpenCV.push_back(LinearLSTriangulation4(inlierPtsImage1.at(n),projection1,
                                                            inlierPtsImage2.at(n),projection2));
-                 cloud.push_back(cv::Point3d(pointCloudOpenCV(0),pointCloudOpenCV(1),pointCloudOpenCV(2)));
+                cloud.push_back(cv::Point3d(pointCloudOpenCV(0),pointCloudOpenCV(1),pointCloudOpenCV(2)));
                 // std::cout << "pointcloudOpencv: " << cloud << std::endl;
                 // cv::waitKey(0);
                }
@@ -465,7 +480,7 @@ int cont =0;
              cv::Mat X = cv::Mat(temp_result.size(),temp_result.size(),CV_8UC1);
 
              std::memcpy(X.data, temp_result.data(), temp_result.size()*sizeof(uchar));
-
+*/
 
 
 
@@ -489,7 +504,7 @@ int cont =0;
                             // Add the virtual camera to the environment
 
 
-                           cv::viz::WCloud point3d(cloud2, cv::viz::Color::green());
+                           cv::viz::WCloud point3d(cloud, cv::viz::Color::green());
 
                             point3d.setRenderingProperty(cv::viz::POINT_SIZE, 3.0);
 
@@ -510,10 +525,10 @@ int cont =0;
                                 visualizer.spin();
                             }
 
-*/
 
 
 
+/*
 
               pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloudPCL;
               pointcloudPCL = MatToPoinXYZ(pointCloudOpenCV);
@@ -536,6 +551,7 @@ int cont =0;
               while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
                 viewer.spinOnce ();
                            }
+                           */
 /*
 */
 
@@ -773,7 +789,11 @@ std::vector<cv::DMatch> obtenerMatches(cv::Mat& image1,cv::Mat& image2,
   std::vector<cv::DMatch> matches,good_matches;
   matcher.match(descriptors1,descriptors2,matches);
 
+  std::cout << "Total matches: " << matches.size() << std::endl;
+
   good_matches = thresholdGoodMatches(descriptors1,matches);
+
+  std::cout << "Total good matches: " << good_matches.size() << std::endl;
 
   // 1st image is the destination image and the 2nd image is the src image
 
@@ -804,9 +824,11 @@ std::vector<cv::Point2f> keypoints2F(std::vector<cv::KeyPoint>& keypoints,std::v
 
 std::vector<cv::DMatch> thresholdGoodMatches(cv::Mat& descriptors,std::vector<cv::DMatch>& matches) {
 
-        double max_dist=1;
-        double min_dist = 0.019635;
+        double max_dist=0.8;
         std::vector<cv::DMatch> good_matches;
+
+        double min_dist = 100;
+
         for(int i=0;i<descriptors.rows;i++){
 
            double dist = matches[i].distance;
@@ -818,13 +840,14 @@ std::vector<cv::DMatch> thresholdGoodMatches(cv::Mat& descriptors,std::vector<cv
            }
         }
 
-      for(int i=0;i<descriptors.rows;i++){
+      for(int i=0;i<matches.size();i++){
 
-        if(matches[i].distance <= 12*min_dist){
+        if(matches[i].distance <= min_dist*3){
 
               good_matches.push_back(matches[i]);
          }
       }
+
       return good_matches;
     }
 
