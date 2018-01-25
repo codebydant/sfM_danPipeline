@@ -11,7 +11,7 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 
 * Homepage: <http://opencv.org>
 * Docs: <http://docs.opencv.org/master/>
-*
+
 #### Requerimientos
 
 * OpenCV 3.2.0
