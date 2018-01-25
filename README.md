@@ -23,4 +23,8 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 * Ceres
 * ROS Kinetic
 
+### Nota:
+El fichero CMakeLists.txt sirve para compilar el programa con CMake.
+El fichero CMakeLists-user.txt es utilizado por QTCreator para compilar el programa.
+
 
