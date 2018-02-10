@@ -40,9 +40,9 @@ double TriangulatePoints(const std::vector<cv::KeyPoint>& pt_set1,
                          const std::vector<cv::KeyPoint>& pt_set2,const cv::Mat&Kinv,
                          const cv::Matx34d& P,const cv::Matx34d& P1,std::vector<cv::Point3d>& pointcloud,
                          const cv::Mat& K);
-cv::Mat LinearLSTriangulation(cv::Point3d u,cv::Matx34d P,cv::Point3d u1,cv::Matx34d P1);
+cv::Mat_<double> LinearLSTriangulation(cv::Point3d u,cv::Matx34d P,cv::Point3d u1,cv::Matx34d P1);
 
-cv::Mat_<double> TriangulatePoints2(const std::vector<cv::KeyPoint>& pt_set1,
+cv::Mat_<float> TriangulatePoints2(const std::vector<cv::KeyPoint>& pt_set1,
                          const std::vector<cv::KeyPoint>& pt_set2,const cv::Mat&Kinv,
                          const cv::Matx34d& P,const cv::Matx34d& P1,
                          const cv::Mat& K,std::vector<cv::Point3d>& pointcloud);
@@ -154,7 +154,7 @@ std::cout << "************************************************" << std::endl;
               image1 = cv::imread(frame1,0);
               image2 = cv::imread(frame2,0);
 
-              for(int n=0;n<8;n++){
+              for(int n=0;n<17;n++){
 
                    if (x==1) {
 
@@ -182,8 +182,13 @@ std::cout << "************************************************" << std::endl;
 
                  cv::drawMatches(image1,keypoints1,image2,keypoints2,matches,matchImage,cv::Scalar::all(-1),
                  cv::Scalar::all(-1),std::vector<char>(),2);
-                cv::imshow("matches",matchImage);
-                cv::waitKey(0);
+
+
+                cv::namedWindow( "matches", CV_WINDOW_NORMAL  );
+                        cv::resizeWindow  ("matches",600,300);
+                        cv::moveWindow("matches",0,0);
+                        cv::imshow("matches",matchImage);
+                        cv::waitKey(30);
 
 
              // std::cout <<"points1 : "<< "\n" << points1 << std::endl;
@@ -372,6 +377,14 @@ cv::Mat_<double> error;
 
                   ptrFeature2D->compute(image1,keypoints1,descriptors1);
                   ptrFeature2D->compute(image2,keypoints2,descriptors2);
+
+                  cv::drawMatches(image1,keypoints1,image2,keypoints2,matches,matchImage,cv::Scalar::all(-1),
+                  cv::Scalar::all(-1),std::vector<char>(),2);
+                  cv::namedWindow( "matches", CV_WINDOW_NORMAL  );
+                          cv::resizeWindow  ("matches",600,300);
+                          cv::moveWindow("matches",0,0);
+                          cv::imshow("matches",matchImage);
+                          cv::waitKey(30);
                 //  std::cout << "desciptors1: " << "\n" << descriptors1 << std::endl;
                   //   std::cout << "desciptors2: " << "\n" << descriptors2 << std::endl;
 
@@ -566,12 +579,8 @@ cv::Mat_<double> error;
                             // Create a viz window
                             cv::viz::Viz3d visualizer("Viz window");
 
-                            cv::viz::WCoordinateSystem ucs(3);
-                            ucs.setRenderingProperty(cv::viz::LINE_WIDTH,3);
+                            cv::viz::WCoordinateSystem ucs(100);
 
-                            // Add line to represent (1,1,1) axis
-                           cv::viz::WLine axis(cv::Point3f(0,0,0), cv::Point3f(1.0f,1.0f,1.0f));
-                           // axis.setRenderingProperty(cv::viz::LINE_WIDTH, 2.0);
 
                             // Create a virtual camera
                           //  cv::viz::WCameraPosition cam1(matrixK, image1, 150,cv::viz::Color::white());
@@ -585,20 +594,18 @@ cv::Mat_<double> error;
 
                            cv::viz::WCloud point3d(temp_result, cv::viz::Color::green());
 
-                            point3d.setRenderingProperty(cv::viz::POINT_SIZE, 2.0);
+                            point3d.setRenderingProperty(cv::viz::POINT_SIZE, 1.0);
 
-                            visualizer.setBackgroundColor(cv::viz::Color::black());
-                            visualizer.showWidget("Coordinate Widget", cv::viz::WCoordinateSystem());
-                            visualizer.showWidget("Line Widget", ucs);
-                    //        visualizer.showWidget("Camera1", cam1);
-                      //      visualizer.showWidget("Camera2", cam2);
+                            visualizer.setBackgroundColor(cv::viz::Color::black());                          
+                            visualizer.showWidget("Coordinate Widget", ucs);
                             visualizer.showWidget("Point3D", point3d);
+                            //        visualizer.showWidget("Camera1", cam1);
+                              //      visualizer.showWidget("Camera2", cam2);
 
-                            visualizer.showWidget("usc", axis);
                             cv::Affine3d pose(relativeRotationCam,relativeTranslaCam);
 
                             //visualizer.setWidgetPose("Camera2", pose);
-                           // visualizer.setWidgetPose("Point3D", pose);
+                            visualizer.setWidgetPose("Point3D", pose);
 
                             // visualization loop
                             while(cv::waitKey(0) && !visualizer.wasStopped()){
@@ -892,7 +899,8 @@ std::vector<cv::DMatch> obtenerMatches(cv::Mat& image1,cv::Mat& image2,
   inliers.push_back(good_matches[i]);
   }
   good_matches.swap(inliers);
-  return good_matches;
+
+return good_matches;
 
   //return good_matches;
 }
@@ -943,7 +951,7 @@ std::vector<cv::DMatch> thresholdGoodMatches(cv::Mat& descriptors,std::vector<cv
       return good_matches;
     }
 
-cv::Mat LinearLSTriangulation(cv::Point3d u,cv::Matx34d P,cv::Point3d u1,cv::Matx34d P1){
+cv::Mat_<double> LinearLSTriangulation(cv::Point3d u,cv::Matx34d P,cv::Point3d u1,cv::Matx34d P1){
 //build A matrix
 cv::Matx43d A(u.x*P(2,0)-P(0,0),u.x*P(2,1)-P(0,1),u.x*P(2,2)-P(0,2),
               u.y*P(2,0)-P(1,0),u.y*P(2,1)-P(1,1),u.y*P(2,2)-P(1,2),
@@ -954,7 +962,7 @@ cv::Matx43d A(u.x*P(2,0)-P(0,0),u.x*P(2,1)-P(0,1),u.x*P(2,2)-P(0,2),
 cv::Matx41d B(-(u.x*P(2,3)-P(0,3)),-(u.y*P(2,3)-P(1,3)),-(u1.x*P1(2,3)-P1(0,3)),-(u1.y*P1(2,3)-P1(1,3)));
 
 //solve for X
-cv::Mat X;
+cv::Mat_<double> X;
 cv::solve(A,B,X,cv::DECOMP_SVD);
 return X;
 }
@@ -989,13 +997,13 @@ double TriangulatePoints(const std::vector<cv::KeyPoint>& pt_set1,
 }
 
 
-cv::Mat_<double> TriangulatePoints2(const std::vector<cv::KeyPoint>& pt_set1,
+cv::Mat_<float> TriangulatePoints2(const std::vector<cv::KeyPoint>& pt_set1,
                          const std::vector<cv::KeyPoint>& pt_set2,const cv::Mat&Kinv,
                          const cv::Matx34d& P,const cv::Matx34d& P1,
                          const cv::Mat& K,std::vector<cv::Point3d>& pointcloud){
 
         std::vector<double> reproj_error;
-        cv::Mat_<double> X ;
+        cv::Mat_<float> X ;
         for (unsigned int i=0; i<pt_set1.size(); i++) {
         //convert to normalized homogeneous coordinates
            cv::Point2f kp = pt_set1[i].pt;
@@ -1040,5 +1048,10 @@ cv::Matx41d B(-(u.x*P(2,3)-P(0,3)),-(u.y*P(2,3)-P(1,3)),-(u1.x*P1(2,3)-P1(0,3)),
 //solve for X
 cv::Mat_<double> X;
 cv::solve(A,B,X,cv::DECOMP_SVD);
-return X;
+if(X.data<0){
+    X*=-1;
+  }else{
+    X=X;
+  }
+return X*7;
 }
