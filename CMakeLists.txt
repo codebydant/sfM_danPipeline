@@ -76,13 +76,18 @@ include_directories(${catkin_INCLUDE_DIRS})
 ##############################################################################
 
 link_directories(${OpenCV_LIB_DIR})
-set(SOURCE sfm.cpp)
+
+##############################################################################
+# VARIABLES
+##############################################################################
+
+set(SOURCE "src/main.cpp")
 set(OpenCV_INCLUDE "usr/local/include/opencv2/*.hpp")
-FILE(GLOB_RECURSE HEADER_FILES include *.h )
-FILE(GLOB_RECURSE HEADERS_OpenCV include /usr/local/include/opencv2/*.hpp )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-add_custom_target(headers SOURCES ${HEADER_FILES} ${HEADERS_OpenCV})
+FILE(GLOB_RECURSE HEADER_FILES include *.h )
+#FILE(GLOB_RECURSE HEADERS_OpenCV include /usr/local/include/opencv2/*.hpp )
+add_custom_target(headers SOURCES ${HEADER_FILES})
 
 ##############################################################################
 # DATA
