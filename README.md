@@ -1,7 +1,7 @@
 
 ### Proyecto-grado-3D-recons
 ----------------------
-<img src="https://projects.asl.ethz.ch/datasets/lib/exe/fetch.php?cache=&w=900&h=539&tok=dd850d&media=laserregistration:gazebo_winter:tree.png" align="center" height="100">
+<img src="https://projects.asl.ethz.ch/datasets/lib/exe/fetch.php?cache=&w=900&h=539&tok=dd850d&media=laserregistration:gazebo_winter:tree.png" align="center" height="1028">
 
 Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimación de características dasométricas.
 * Altura del fuste
