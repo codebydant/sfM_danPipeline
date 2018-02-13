@@ -6,7 +6,6 @@
 #include <fstream>
 #include <string>
 #include "../include/Sfm.h"
-#include "../include/Ceres_configFile.h"
 #include "../include/Bundler_adjustment.h"
 #include "../include/Ros_interface.h"
 
@@ -38,18 +37,12 @@ std::cout << "************************************************" << std::endl;
   GaussianBlur(image2,image2, cv::Size(7,7),1.5,1.5);
 
   StructFromMotion sfm(image1,image2);
-
-  cv::namedWindow( "matches", CV_WINDOW_NORMAL  );
-  cv::resizeWindow  ("matches",600,300);
-  cv::moveWindow("matches",0,0);
-  cv::imshow("matches",sfm.imageMatching());
-  cv::waitKey(30);
-
-  std::vector<cv::Point3d> puntos = sfm.triangulation();
+  sfm.matchingImShow();
+  sfm.initTriangulation();
 
   temp_img2 = image2;
 
-  for(int n=1;n<9;n++){
+  for(int n=1;n<5;n++){
 
         image1=temp_img2;
 
@@ -65,14 +58,8 @@ std::cout << "************************************************" << std::endl;
         sfm.setConstructor(temp_img2,image2);
 
         temp_img2 = image2;
-
-        cv::namedWindow( "matches", CV_WINDOW_NORMAL  );
-        cv::resizeWindow  ("matches",600,300);
-        cv::moveWindow("matches",0,0);
-        cv::imshow("matches",sfm.imageMatching());
-        cv::waitKey(30);
-
-        std::vector<cv::Point3d> puntos = sfm.triangulation();
+        sfm.matchingImShow();
+        sfm.initTriangulation();
 
         }
   sfm.visualizerPointCloud();
