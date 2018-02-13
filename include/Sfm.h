@@ -32,11 +32,17 @@ public:
 
   StructFromMotion();
 
-  StructFromMotion(cv::Mat img1,cv::Mat img2):image1(img1),image2(img2){}
+  StructFromMotion(cv::Mat img1,cv::Mat img2):image1(img1),image2(img2){
+    GaussianBlur(this->image1,this->image1, cv::Size(7,7),1.5,1.5);
+    GaussianBlur(this->image2,this->image2, cv::Size(7,7),1.5,1.5);
+  }
 
   void setConstructor(cv::Mat& img1,cv::Mat& img2){
+
+    GaussianBlur(img1,img1, cv::Size(7,7),1.5,1.5);
+    GaussianBlur(img2,img2, cv::Size(7,7),1.5,1.5);
     this->image1 = img1;
-    this->image2 = img2;
+    this->image2 = img2;    
     this->matrixE23 = findEssentialMatrix();
 
     cv::Mat matrixTotal;
