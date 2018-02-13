@@ -34,10 +34,10 @@ std::cout << "************************************************" << std::endl;
 
   StructFromMotion sfm(image1,image2);
   sfm.matchingImShow();
-  sfm.initTriangulation();
+  //sfm.initTriangulation();
   temp_img2 = image2;
 
-  for(int n=1;n<18;n++){
+  for(int n=1;n<15;n++){
 
         image1=temp_img2;
         std::cout << "----------------------------------" << std::endl;
