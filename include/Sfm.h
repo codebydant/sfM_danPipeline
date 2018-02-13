@@ -4,6 +4,7 @@
 #include "opencv2/viz.hpp"
 #include "opencv2/viz/vizcore.hpp"
 #include "opencv2/viz/viz3d.hpp"
+#include <eigen3/Eigen/Dense>
 
 class StructFromMotion{
 
@@ -47,6 +48,10 @@ public:
    // std::cout << "matrixE23 " << matrixE23 << std::endl;
   }
 
+  void initTriangulation(){
+
+    triangulation();
+  }
 
 void cameraPoseAcumulada(){
 
@@ -339,7 +344,7 @@ cv::Mat findEssentialMatrix(){
 
    }
 
-cv::Mat inverse(cv::Mat matrix){
+cv::Mat inverse(cv::Mat& matrix){
 
   Eigen::MatrixXd invMatrix,invMatrixTranspose;
   Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,
@@ -484,6 +489,13 @@ while(cv::waitKey(0) && !visualizer.wasStopped()){
 
 }
 
+void matchingImShow(){
+cv::namedWindow("matches",CV_WINDOW_NORMAL);
+cv::resizeWindow("matches",600,300);
+cv::moveWindow("matches",0,0);
+cv::imshow("matches",imageMatching());
+cv::waitKey(30);
+}
 
 };//Fin clase
 
