@@ -1,6 +1,7 @@
 
 ### Proyecto-grado-3D-recons
 ==============================================================================
+<img src="http://ns50.pointclouds.org/assets/images/contents/logos/pcl/pcl_horz_large_pos.png" align="center" height="100">
 
 Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimación de características dasométricas.
 * Altura del fuste
