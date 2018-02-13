@@ -1,5 +1,5 @@
 
-### Proyecto-grado-3D-recons
+# Proyecto-grado-3D-recons
 ----------------------
 <img src="https://projects.asl.ethz.ch/datasets/lib/exe/fetch.php?cache=&w=900&h=539&tok=dd850d&media=laserregistration:gazebo_winter:tree.png" align="center" height="200">
 
@@ -15,7 +15,7 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 * Homepage: <http://opencv.org>
 * Docs: <http://docs.opencv.org/master/>
 
-#### Requerimientos
+### Requerimientos
 
 * OpenCV 3.2.0
 * OpenCV contrib 3.2.0
@@ -26,14 +26,14 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 * Ceres
 * ROS Kinetic
 
-## Building
+### Building
 Download the src code: git@github.com:danielTobon43/Proyecto-grado-3D-recons.git
 Unpack 3D_recons.zip
 mkdir build && cd build
 cmake ../src/
 make
 
-## Test
+### Test
 cd /3D_recons_build_directory/bin
 ./sfm
 
