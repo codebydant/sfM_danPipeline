@@ -28,13 +28,18 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 
 ### Building
 Download the src code: git@github.com:danielTobon43/Proyecto-grado-3D-recons.git
+
 Unpack 3D_recons.zip
+
 mkdir build && cd build
+
 cmake ../src/
+
 make
 
 ### Test
 cd /3D_recons_build_directory/bin
+
 ./sfm
 
 ### Nota:
