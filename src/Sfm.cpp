@@ -4,7 +4,10 @@
  PIPELINE
 ********************************************/
 
-std::vector<cv::Point3d> StructFromMotion::recon(cv::Mat& img1, cv::Mat& img2){
+void StructFromMotion::recon( std::ifstream& file){
+
+  cv::Mat img1, img2;
+  StructFromMotion::cargarFrame(file,img1,img2);
 
   // **(1) FEATURE EXTRACTION
   std::vector<cv::KeyPoint> keypoints1 = StructFromMotion::obtenerKeypoints(img1);
@@ -15,7 +18,7 @@ std::vector<cv::Point3d> StructFromMotion::recon(cv::Mat& img1, cv::Mat& img2){
   cv::Mat matchImage = StructFromMotion::imageMatching(img1,keypoints1,img2, keypoints2,good_matches);
   StructFromMotion::matchingImShow(matchImage);
 
-  // **(3) KEYPOINTS --> only pt.x and pt.y [x,y] without angle, point size, etc...
+  // **(3) KEYPOINTS 2F --> only pt.x and pt.y [x,y] without angle, point size, etc...
   std::vector<cv::Point2f> points1 = StructFromMotion::keypoints2F(keypoints1,good_matches);
   std::vector<cv::Point2f> points2 = StructFromMotion::keypoints2F(keypoints2,good_matches);
 
@@ -51,6 +54,11 @@ std::vector<cv::Point3d> StructFromMotion::recon(cv::Mat& img1, cv::Mat& img2){
  FUNCIONES
 ********************************************/
 
+StructFromMotion::StructFromMotion(cv::Mat& img1,cv::Mat& img2):image1(img1),image2(img2){
+    GaussianBlur(img1,img1, cv::Size(7,7),1.5,1.5);
+    GaussianBlur(img2,img2, cv::Size(7,7),1.5,1.5);
+}
+
 void StructFromMotion::setConstructor(cv::Mat& img1,cv::Mat& img2){
 
   GaussianBlur(img1,img1, cv::Size(7,7),1.5,1.5);
@@ -68,6 +76,38 @@ void StructFromMotion::setConstructor(cv::Mat& img1,cv::Mat& img2){
  // std::cout << "matrixE12 actual: " << matrixE12 << std::endl;
  // std::cout << "matrixE23 " << matrixE23 << std::endl;
  */
+}
+
+void StructFromMotion::cargarFrame( std::ifstream& file,cv::Mat& image1,cv::Mat& image2){
+
+  std::string frame1,frame2;
+  std::cout << "----------------------------------" << std::endl;
+  std::getline(file, frame1);
+  std::cout << frame1 << std::endl;
+  std::getline(file, frame2);
+  std::cout << frame2<< std::endl;
+  std::cout << "----------------------------------" << std::endl;
+
+  image1 = cv::imread(frame1,CV_LOAD_IMAGE_COLOR);
+  image2 = cv::imread(frame2,CV_LOAD_IMAGE_COLOR);
+
+  /*
+  temp_img2 = image2;
+
+  for(int n=1;n<3;n++){
+
+        image1=temp_img2;
+        std::cout << "----------------------------------" << std::endl;
+      //  std::getline(file, frame2);
+      //  std::cout << frame2 <<std::endl;
+      //  image2 = cv::imread(frame2,CV_LOAD_IMAGE_COLOR);
+        std::cout << "----------------------------------" << std::endl;
+
+        temp_img2 = image2;
+        }
+
+        */
+
 }
 
 std::vector<cv::Point2f> StructFromMotion::keypoints2F(std::vector<cv::KeyPoint>& keypoints,std::vector<cv::DMatch>& matches){
