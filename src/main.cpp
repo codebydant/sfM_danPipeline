@@ -2,7 +2,6 @@
            HEADERS
 **********************************/
 
-
 #include "../include/Sfm.h"
 #include "../include/Bundler_adjustment.h"
 #include "../include/Ros_interface.h"
@@ -25,4 +24,4 @@ int main(int argc, char **argv ){
 
 return 0;
 
-}//end main function
+}//end main
