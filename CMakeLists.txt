@@ -61,10 +61,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
+set(SFM_HEADER "../include/Sfm.h")
+
 ##############################################################################
 # HEADERS
 ##############################################################################
-
+include_directories(include)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${CERES_INCLUDE_DIRS})
@@ -80,14 +82,15 @@ link_directories(${OpenCV_LIB_DIR})
 ##############################################################################
 # VARIABLES
 ##############################################################################
-
-set(SOURCE "src/main.cpp")
+set(SFM_HEADER include/Sfm.h)
+set(SOURCE "src/main.cpp" "src/Sfm.cpp")
 set(OpenCV_INCLUDE "usr/local/include/opencv2/*.hpp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 FILE(GLOB_RECURSE HEADER_FILES include *.h )
+FILE(GLOB_RECURSE SOURCE_FILES include *.cpp )
 #FILE(GLOB_RECURSE HEADERS_OpenCV include /usr/local/include/opencv2/*.hpp )
-add_custom_target(headers SOURCES ${HEADER_FILES})
+add_custom_target(headers SOURCES ${HEADER_FILES} ${SOURCE_FILES})
 
 ##############################################################################
 # DATA
@@ -100,7 +103,7 @@ configure_file("data/soup2.jpg" ${CMAKE_CURRENT_BINARY_DIR}/bin/soup2.jpg COPYON
 # EJECUTABLES
 ##############################################################################
 
-add_executable(sfm ${SOURCE} )
+add_executable(sfm ${SOURCE}  ${SFM_HEADER} )
 #add_executable(cameraCalibration camera_calibration.cpp)
 #add_executable(bundler Bundler_Adjustment.cpp)
 
