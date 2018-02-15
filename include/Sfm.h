@@ -5,6 +5,10 @@
 #include "opencv2/viz/vizcore.hpp"
 #include "opencv2/viz/viz3d.hpp"
 #include <eigen3/Eigen/Dense>
+#include <iostream>
+#include <fstream>
+#include <string>
+
 
 class StructFromMotion{
 
@@ -14,10 +18,7 @@ public:
 
 StructFromMotion(){}
 
-StructFromMotion(cv::Mat& img1,cv::Mat& img2):image1(img1),image2(img2){
-    GaussianBlur(img1,img1, cv::Size(7,7),1.5,1.5);
-    GaussianBlur(img2,img2, cv::Size(7,7),1.5,1.5);
-}
+StructFromMotion(cv::Mat& img1,cv::Mat& img2);
 
 std::vector<cv::Point3d> recon();
 
@@ -59,7 +60,9 @@ std::vector<cv::Point3d> triangulation(std::vector<cv::Point2f>& points1,std::ve
 
 void visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,std::vector<cv::Point3d>& pointcloud);
 
-std::vector<cv::Point3d> recon(cv::Mat& img1, cv::Mat& img2);
+void recon( std::ifstream& file);
+
+void cargarFrame( std::ifstream& file,cv::Mat& image1,cv::Mat& image2);
 
 
 
