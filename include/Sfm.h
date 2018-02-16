@@ -8,10 +8,11 @@
 #include "opencv2/viz.hpp"
 #include "opencv2/viz/vizcore.hpp"
 #include "opencv2/viz/viz3d.hpp"
-#include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <eigen3/Eigen/Dense>
+#include <math.h>
 
 class StructFromMotion{
 
@@ -69,8 +70,6 @@ class StructFromMotion{
 
   void setConstructor(cv::Mat& img1,cv::Mat& img2);
 
-  void cameraPoseAcumulada();
-
   //----------------------------------------------
   //TRIANGULATION FUNCTIONS
   //----------------------------------------------
@@ -84,6 +83,10 @@ class StructFromMotion{
   //----------------------------------------------
 
   cv::Mat inverse(cv::Mat& matrix);
+
+  double determinante(cv::Mat& relativeRotationCam);
+
+  bool CheckCoherentRotation(cv::Mat_<double>& R);
 
 };//Fin class
 
