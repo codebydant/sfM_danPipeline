@@ -23,32 +23,52 @@ void StructFromMotion::recon(std::ifstream& file){
   img2 = cv::imread(frame2,CV_LOAD_IMAGE_COLOR);
 
   // **(1) FEATURE EXTRACTION
-  std::vector<cv::KeyPoint> keypoints1 = StructFromMotion::obtenerKeypoints(img1);
-  std::vector<cv::KeyPoint> keypoints2 = StructFromMotion::obtenerKeypoints(img2);
+  Keypoints keypoints1 = StructFromMotion::obtenerKeypoints(img1);
+  Keypoints keypoints2 = StructFromMotion::obtenerKeypoints(img2);
 
-  // **(2) MATCHES
-  std::vector<cv::DMatch> good_matches = StructFromMotion::obtenerMatches(img1,img2,keypoints1,keypoints2);
+  // **(2) FEATURE DESCRIPTION
+  cv::Mat descriptors1,descriptors2;
+  descriptors1 = StructFromMotion::obtenerDescriptors(img1,keypoints1);
+  descriptors2 = StructFromMotion::obtenerDescriptors(img2,keypoints2);
+
+  // **(3) FEATURE MATCHING
+  MatchesVector good_matches = StructFromMotion::obtenerMatches(descriptors1,descriptors2);
   cv::Mat matchImage = StructFromMotion::imageMatching(img1,keypoints1,img2, keypoints2,good_matches);
   StructFromMotion::matchingImShow(matchImage);
 
-  // **(3) KEYPOINTS 2F --> only pt.x and pt.y [x,y] without angle, point size, etc...
-  std::vector<cv::Point2f> points1 = StructFromMotion::keypoints2F(keypoints1,good_matches);
-  std::vector<cv::Point2f> points2 = StructFromMotion::keypoints2F(keypoints2,good_matches);
+  // **(4) KEYPOINTS 2F --> only pt.x and pt.y [x,y] without angle, point size, etc...
+  Points2f leftPoints2F = StructFromMotion::keypoints2F(keypoints1,good_matches);
+  Points2f rightPoints2F = StructFromMotion::keypoints2F(keypoints2,good_matches);
 
-  // **(4) CAMERA MATRIX
+  Points2f leftPointsAligned;
+  Points2f rightPointsAligned;
+
+  if(good_matches.size() <= 0) {
+      //points already aligned...
+      leftPointsAligned = leftPoints2F;
+      rightPointsAligned = rightPoints2F;
+    }else {
+
+        // **(4.1) ALIGNED POINTS
+        StructFromMotion::AlignedPointsFromMatch(keypoints1,keypoints2,good_matches,
+                                                 leftPointsAligned,rightPointsAligned);
+     }
+
+  // **(5) CAMERA MATRIX
   cv::Mat_<double> matrixK = StructFromMotion::getCameraMatrix();
   double f = matrixK.at<double>(0,0);
   double cx= matrixK.at<double>(0,2);
   double cy = matrixK.at<double>(1,2);
 
-  // **(5) ESSENTIAL MATRIX
-  cv::Mat_<double> matrixE = StructFromMotion::findEssentialMatrix(points1,points2,matrixK);
+  // **(6) ESSENTIAL MATRIX
+  cv::Mat mask;
+  cv::Mat_<double> matrixE = StructFromMotion::findEssentialMatrix(leftPointsAligned,rightPointsAligned,matrixK,mask);
 
-  // **(6) CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
+  // **(7) CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
   cv::Mat_<double> relativeRotationCam,relativeTranslaCam,inliers;
-  StructFromMotion::cameraPose(points1,points2,f,cx,cy,relativeRotationCam,relativeTranslaCam,inliers,matrixE );  
+  StructFromMotion::cameraPose(leftPointsAligned,rightPointsAligned,f,cx,cy,relativeRotationCam,relativeTranslaCam,inliers,matrixE );
 
-  // **(7) PROJECTION MATRIX
+  // **(8) PROJECTION MATRIX
   cv::Mat_<double> projection1,projection2;
   if (! StructFromMotion::CheckCoherentRotation(relativeRotationCam)) {
       std::cout << "resulting rotation is not coherent\n" << std::endl;
@@ -59,107 +79,52 @@ void StructFromMotion::recon(std::ifstream& file){
   StructFromMotion::projection(relativeRotationCam,relativeTranslaCam, projection1,projection2);
   }
 
-  // **(8) TRIANGULATION
-  std::vector<cv::Point3d> cloud = StructFromMotion::triangulation(points1,points2,projection1,projection2,inliers);
+  // **(9) IMAGE COORDINATE TO CAMERA COORDINATE (pixels --> metric)
 
-  cv::Mat tempImage2 = img2;
-  cv::Mat_<double> projectionTemp = projection2;
-  std::vector<cv::Point3d> pointcloud=cloud;
-  cv::Mat_<double> matrixE12 = matrixE;
+  cv::Mat points1Homo,points2Homo;
+  cv::undistortPoints(leftPointsAligned, points1Homo, matrixK, cv::Mat());
+  cv::undistortPoints(rightPointsAligned, points2Homo, matrixK, cv::Mat());
 
-   for(int n=0;n<10;n++){
+  // **(10) TRIANGULATION
+  cv::Mat cloud;
+  cv::triangulatePoints(projection1,projection2,points1Homo,points2Homo,cloud);
 
-       cv::Mat img1 = tempImage2;
-       std::string frame2;
-       std::getline(file, frame2);
-       std::cout << "---------------------------" << std::endl;
-       cv::Mat img2 = cv::imread(frame2,CV_LOAD_IMAGE_COLOR);
-       // **(1) FEATURE EXTRACTION
-       std::vector<cv::KeyPoint> keypoints1 = StructFromMotion::obtenerKeypoints(img1);
-       std::vector<cv::KeyPoint> keypoints2 = StructFromMotion::obtenerKeypoints(img2);
+  std::cout << "triangulate points, depth [z]:" << cloud << std::endl;
 
-       // **(2) MATCHES
-       std::vector<cv::DMatch> good_matches = StructFromMotion::obtenerMatches(img1,img2,keypoints1,keypoints2);
-       cv::Mat matchImage = StructFromMotion::imageMatching(img1,keypoints1,img2, keypoints2,good_matches);
-       StructFromMotion::matchingImShow(matchImage);
+  /*
 
-       // **(3) KEYPOINTS 2F --> only pt.x and pt.y [x,y] without angle, point size, etc...
-       std::vector<cv::Point2f> points1 = StructFromMotion::keypoints2F(keypoints1,good_matches);
-       std::vector<cv::Point2f> points2 = StructFromMotion::keypoints2F(keypoints2,good_matches);
+  std::vector<cv::Point3d> cloudVector;
+  cloudVector = cloud.reshape(1,1);
 
-       // **(4) CAMERA MATRIX
-       cv::Mat_<double> matrixK = StructFromMotion::getCameraMatrix();
-       double f = matrixK.at<double>(0,0);
-       double cx= matrixK.at<double>(0,2);
-       double cy = matrixK.at<double>(1,2);
+  std::cout << "cloudVector size:" << cloudVector.size() << std::endl;
+  std::vector<cv::Point3d> pointcloud;
+ for(size_t n=0;n<points1Homo.rows;n++){
 
-       // **(5) ESSENTIAL MATRIX
-       cv::Mat_<double> matrixE23 = StructFromMotion::findEssentialMatrix(points1,points2,matrixK);
-       cv::Mat_<double> matrixETotal = matrixE12*matrixE23;
+   pointcloud.push_back(cv::Point3d(points1Homo[n].x,points2Homo[n].y,cloudVector.at(n)));
 
-       // **(6) CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
-       cv::Mat_<double> relativeRotationCam,relativeTranslaCam,inliers;
-       StructFromMotion::cameraPose(points1,points2,f,cx,cy,relativeRotationCam,relativeTranslaCam,inliers,matrixETotal );
+  }
+  */
 
-       // **(7) PROJECTION MATRIX
-       cv::Mat_<double> projection1,projection2;
+  // **(11) CONVERTION CAMERA COORDINATE TO WORLD COORDINATE
+  cv::Mat pointcloudWorld;
+  cv::convertPointsFromHomogeneous(cloud.t(),pointcloudWorld);
 
-       if (! StructFromMotion::CheckCoherentRotation(relativeRotationCam)) {
-           std::cout << "resulting rotation is not coherent\n" << std::endl;
-           projection1 = cv::Mat(3, 4, CV_64F,cv::Scalar(0.0));
-           projection2 = cv::Mat(3, 4, CV_64F,cv::Scalar(0.0));
-           cv::Mat diag(cv::Mat::eye(3, 3, CV_64F)); // ---> Crea una matriz identidad
-           diag.copyTo(projection1(cv::Rect(0, 0, 3, 3)));
+  // cv::Mat tempImage2 = img2;
+  // cv::Mat_<double> projectionTemp = projection2;
+  // std::vector<cv::Point3d> pointcloud=cloud;
+  // cv::Mat_<double> matrixE12 = matrixE;
 
-       }else{
-       projection1 = cv::Mat(3, 4, CV_64F,cv::Scalar(0.0));
-       projection2 = cv::Mat(3, 4, CV_64F,cv::Scalar(0.0));
+  // **(12) POINTCLOUD VISUALIZER
+  cv::Matx33d matrixCam = (cv::Matx33d)matrixK;
+  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloudWorld);
 
-       relativeRotationCam.copyTo(projection2(cv::Rect(0, 0, 3, 3)));
-       relativeTranslaCam.copyTo(projection2.colRange(3, 4));
-
-       //projection2 --> crea una matríz homogénea 3x4 [R|t]
-
-       projection1 = projectionTemp;
-
-       std::cout << "projection1 ciclo1: " << projection1 << std::endl;
-       std::cout << "projection2 ciclo1: " << projection2 << std::endl;
-
-       }
-
-       // **(8) TRIANGULATION
-      //pointcloud = StructFromMotion::triangulation(points1,points2,projection1,projection2,inliers);
-
-       std::vector<cv::Point3d> inlierPtsImage1, inlierPtsImage2;
-
-       for (int i=0;i<inliers.rows;i++){
-
-            inlierPtsImage1.push_back(cv::Point3d(points1[i].x,points1[i].y,1));
-            inlierPtsImage2.push_back(cv::Point3d(points2[i].x,points2[i].y,1));
-       }
-
-       cv::Mat_<double> pointCloudOpenCV;
-
-
-       for(unsigned int n=0;n<inlierPtsImage1.size();n++){
-
-       pointCloudOpenCV.push_back(StructFromMotion::LinearLSTriangulation(inlierPtsImage1.at(n),projection1,
-                                                               inlierPtsImage2.at(n),projection2));
-
-       pointcloud.push_back(cv::Point3d(inlierPtsImage1[n].x,inlierPtsImage1[n].y,cv::abs(pointCloudOpenCV(n))));
-       }
-
-       tempImage2 = img2;
+ /*    tempImage2 = img2;
        projectionTemp = projection2;
        matrixE12 = matrixETotal;
        pointcloud=pointcloud;
+ */
 
-}
 
-
-  // **(9) POINTCLOUD VISUALIZER
-  cv::Matx33d matrixCam = (cv::Matx33d)matrixK;
-  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloud);
 
 }
 
@@ -167,9 +132,6 @@ void StructFromMotion::recon(std::ifstream& file){
 /********************************************
  FUNCIONES
 ********************************************/
-
-
-
 
 StructFromMotion::StructFromMotion(cv::Mat& img1,cv::Mat& img2):image1(img1),image2(img2){
     GaussianBlur(img1,img1, cv::Size(7,7),1.5,1.5);
@@ -213,28 +175,45 @@ int StructFromMotion::sizeTxtFile( std::ifstream& file){
 
  }
 
-std::vector<cv::KeyPoint> StructFromMotion::obtenerKeypoints (cv::Mat& image){
+Keypoints StructFromMotion::obtenerKeypoints (cv::Mat& image){
 
-  std::vector<cv::KeyPoint> keypoints;
+  Keypoints keypoints;
   cv::Ptr<cv::Feature2D> ptrFeature2D = cv::xfeatures2d::SURF::create(1000.0);
   ptrFeature2D->detect(image,keypoints);
 
   return keypoints;
 }
 
-std::vector<cv::DMatch> StructFromMotion::obtenerMatches(cv::Mat& img1,cv::Mat& img2,std::vector<cv::KeyPoint>& keypoints1,std::vector<cv::KeyPoint>& keypoints2){
+Points2f StructFromMotion::keypoints2F(Keypoints& keypoints,MatchesVector& matches){
+
+  Points2f points2F;
+
+  for (MatchesVector::const_iterator it= matches.begin();it!= matches.end(); ++it){
+  //for(int n=0;n<keypoints.size();n++){
+  // Get the position of left keypoints
+           float x= keypoints[it->queryIdx].pt.x;
+           float y= keypoints[it->queryIdx].pt.y;
+           points2F.push_back(cv::Point2f(x,y));
+
+   }
+   return points2F;
+}
+
+cv::Mat StructFromMotion::obtenerDescriptors (cv::Mat& image,Keypoints& keypoints){
+
+  cv::Mat descriptor;
+  cv::Ptr<cv::Feature2D> ptrFeature2D = cv::xfeatures2d::SURF::create(1000.0);
+  ptrFeature2D->compute(image,keypoints,descriptor);
+
+  return descriptor;
+}
+
+MatchesVector StructFromMotion::obtenerMatches(cv::Mat& descriptors1,cv::Mat& descriptors2){
 
   cv::Ptr<cv::Feature2D> ptrFeature2D = cv::xfeatures2d::SURF::create(1000.0);
 
-  keypoints1=obtenerKeypoints(img1);
-  keypoints2=obtenerKeypoints(img2);
-
-  cv::Mat descriptors1,descriptors2;
-  ptrFeature2D->compute(img1,keypoints1,descriptors1);
-  ptrFeature2D->compute(img2,keypoints2,descriptors2);
-
   cv::Ptr<cv::DescriptorMatcher> matcherFlan = cv::DescriptorMatcher::create("FlannBased");
-  std::vector<cv::DMatch> matches12,matches21,buenosMatches;
+  MatchesVector matches12,matches21,buenosMatches;
   matcherFlan ->match(descriptors1,descriptors2,matches12);
   matcherFlan ->match(descriptors2,descriptors1,matches21);
 
@@ -252,7 +231,7 @@ return buenosMatches;
 
 }
 
-cv::Mat StructFromMotion::imageMatching(cv::Mat& img1,std::vector<cv::KeyPoint>& keypoints1,cv::Mat& img2, std::vector<cv::KeyPoint>& keypoints2,std::vector<cv::DMatch>& matches){
+cv::Mat StructFromMotion::imageMatching(cv::Mat& img1,Keypoints& keypoints1,cv::Mat& img2, Keypoints& keypoints2,MatchesVector& matches){
 
   cv::Mat matchImage;
   cv::drawMatches(img1,keypoints1,img2,keypoints2,matches,matchImage,
@@ -267,30 +246,15 @@ void StructFromMotion::matchingImShow(cv::Mat& matchImage){
     cv::resizeWindow("matches",800,400);
     cv::moveWindow("matches",0,0);
     cv::imshow("matches",matchImage);
-    cv::waitKey(0);
+    cv::waitKey(30);
   }
-
-std::vector<cv::Point2f> StructFromMotion::keypoints2F(std::vector<cv::KeyPoint>& keypoints,std::vector<cv::DMatch>& matches){
-
-  std::vector<cv::Point2f> points2F;
-
-  for (std::vector<cv::DMatch>::const_iterator it= matches.begin();it!= matches.end(); ++it){
-  //for(int n=0;n<keypoints.size();n++){
-  // Get the position of left keypoints
-           float x= keypoints[it->queryIdx].pt.x;
-           float y= keypoints[it->queryIdx].pt.y;
-           points2F.push_back(cv::Point2f(x,y));
-
-   }
-   return points2F;
-}
 
 cv::Mat_<double> StructFromMotion::getCameraMatrix(){
 
-    double fx = 800;
-    double fy = 800;
-    double cx = 400;
-    double cy = 225;
+    double fx = 1520.400000;
+    double fy = 1525.900000;
+    double cx = 302.320000;
+    double cy = 246.870000;
 
     cv::Mat_<double> cameraMatrix = (cv::Mat_<double>(3,3) << fx,0,cx,
                                                      0,fy,cy,
@@ -316,17 +280,29 @@ cv::Mat_<double> StructFromMotion::getCameraMatrix(){
 
   }
 
-cv::Mat_<double> StructFromMotion::findEssentialMatrix(std::vector<cv::Point2f>& points1,std::vector<cv::Point2f>& points2,cv::Mat_<double>& cameraMatrix){
+void StructFromMotion::AlignedPointsFromMatch(Keypoints& left,
+                            Keypoints& right, MatchesVector& matches, Points2f& featuresLeftAligned,Points2f& featuresRightAligned){
 
-     cv::Mat inli;
-     cv::Mat_<double> matrixFundamental = cv::findFundamentalMat(points1,points2,cv::FM_RANSAC,0.1,0.99,inli);
+//align left and right point sets
+for(size_t i=	0;i<matches.size();i++){
+  //	queryIdx	is	the	"left"	image
+  featuresLeftAligned.push_back(left[matches[i].queryIdx].pt);
+  //trainIdx is the "right" image
+  featuresRightAligned.push_back(right[matches[i].trainIdx].pt);
+  }
+
+}
+
+cv::Mat_<double> StructFromMotion::findEssentialMatrix( Points2f& leftPoints,Points2f& rightPoints,cv::Mat_<double>& cameraMatrix,cv::Mat& mask){
+
+     cv::Mat_<double> matrixFundamental = cv::findFundamentalMat(leftPoints,rightPoints,cv::FM_RANSAC,0.1,0.99,mask);
      cv::Mat_<double> matrixE = cameraMatrix.t()*matrixFundamental*cameraMatrix;
 
      return matrixE;
 
  }
 
-void StructFromMotion::cameraPose(std::vector<cv::Point2f>& points1,std::vector<cv::Point2f>& points2,double& fx,double cx,double cy,cv::Mat& rot,cv::Mat& tra,cv::Mat& inliers,cv::Mat_<double>& essentialMatrix ){
+void StructFromMotion::cameraPose(Points2f& points1,Points2f& points2,double& fx,double cx,double cy,cv::Mat& rot,cv::Mat& tra,cv::Mat& inliers,cv::Mat_<double>& essentialMatrix ){
 
      cv::recoverPose(essentialMatrix,points1, points2,
                                rot,tra,fx,cv::Point2d(cx,cy),inliers);
@@ -350,14 +326,13 @@ void StructFromMotion::projection(const cv::Mat& relativeRotationCam,const cv::M
 
   }
 
-void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,std::vector<cv::Point3d>& pointcloud){
+void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,cv::Mat& pointcloud){
 
   // Create a viz window
   cv::viz::Viz3d visualizer("Viz window");
   cv::viz::WCoordinateSystem ucs(100);
 
   //Create a virtual camera
-
   cv::viz::WCameraPosition cam1(cameraMatrix, img1, 150,cv::viz::Color::white());
   cam1.setRenderingProperty(cv::viz::LINE_WIDTH,2);
   cv::viz::WCameraPosition cam2(cameraMatrix, img2, 150,cv::viz::Color::white());
@@ -368,13 +343,13 @@ void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& i
   visualizer.setBackgroundColor(cv::viz::Color::black());
   visualizer.showWidget("Coordinate Widget", ucs);
   visualizer.showWidget("Point3D", point3d);
-  visualizer.showWidget("Camera1", cam1);
-  visualizer.showWidget("Camera2", cam2);
+ // visualizer.showWidget("Camera1", cam1);
+ // visualizer.showWidget("Camera2", cam2);
 
   cv::Affine3d pose(cameraR,cameraT);
 
-  visualizer.setWidgetPose("Camera2", pose);
-  visualizer.setWidgetPose("Point3D", pose);
+//  visualizer.setWidgetPose("Camera2", pose);
+ // visualizer.setWidgetPose("Point3D", pose);
 
   // visualization loop
   while(cv::waitKey(0) && !visualizer.wasStopped()){
@@ -383,9 +358,11 @@ void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& i
   }
 }
 
-std::vector<cv::Point3d> StructFromMotion::triangulation(std::vector<cv::Point2f>& points1,std::vector<cv::Point2f>& points2,cv::Mat_<double>& projection1,cv::Mat_<double>& projection2,cv::Mat& inliers){
+/*
+std::vector<cv::Point3d> StructFromMotion::triangulation(std::vector<cv::Point2f>& points1,std::vector<cv::Point2f>& points2,cv::Mat_<double>& projection1,cv::Mat_<double>& projection2,cv::Mat& inliers,cv::Mat_<double>& cameraMatrix,std::vector<cv::po>& pointcloud){
 
     std::vector<cv::Point3d> inlierPtsImage1, inlierPtsImage2;
+
 
     for (int i=0;i<inliers.rows;i++){
 
@@ -393,34 +370,37 @@ std::vector<cv::Point3d> StructFromMotion::triangulation(std::vector<cv::Point2f
          inlierPtsImage2.push_back(cv::Point3d(points2[i].x,points2[i].y,1));
     }
 
-    cv::Mat_<double> pointCloudOpenCV;
-    std::vector<cv::Point3d> cloud;
+       cv::Mat_<double> X;
+       std::vector<cv::Point3d> cloud;
 
-    for(unsigned int n=0;n<inlierPtsImage1.size();n++){
+       for(unsigned int n=0;n<inlierPtsImage1.size();n++){
 
-    pointCloudOpenCV.push_back(StructFromMotion::LinearLSTriangulation(inlierPtsImage1.at(n),projection1,
-                                                            inlierPtsImage2.at(n),projection2));
-  /*
-    cv::Point3d u(inlierPtsImage1[n].x,inlierPtsImage1[n].y,1.0);
-    cv::Mat_<double> matrixK = this->matrixK;
-    cv::Mat_<double> invK = inverse(matrixK);
+       cv::Mat_<double> invK = inverse(cameraMatrix);
+       cv::Mat_<double> um = invK * cv::Mat_<double>(inlierPtsImage1.at(n));
+       inlierPtsImage1.at(n) = um.at<cv::Point3d>(n);
 
-    cv::Mat_<double> um = invK * cv::Mat_<double>(u);
+       cv::Mat_<double> um1 = invK* cv::Mat_<double>(inlierPtsImage2.at(n));
+      inlierPtsImage2.at(n) = um1.at<cv::Point3d>(n);
+       //triangulate
+       cv::Mat_<double> X = LinearLSTriangulation(inlierPtsImage1.at(n),projection1,inlierPtsImage2.at(n),projection2);
 
-    u = um.at<cv::Point3d>(n);
 
-    cv::Point3d u1(inlierPtsImage2[n].x,inlierPtsImage2[n].y,1.0);
-    cv::Mat_<double> um1 = invK* cv::Mat_<double>(u1);
-    u1 = um1.at<cv::Point3d>(n);
-    //triangulate
-    cv::Mat_<double> X = IterativeLinearLSTriangulation(u,this->projection1,u1,this->projection2);
 
-  */
-    cloud.push_back(cv::Point3d(inlierPtsImage1[n].x,inlierPtsImage1[n].y,cv::abs(pointCloudOpenCV(n))));
-    }
 
+           cv::triangulatePoints()
+
+       X.push_back(StructFromMotion::LinearLSTriangulation(inlierPtsImage1.at(n),projection1,
+                                                                   inlierPtsImage2.at(n),projection2));
+
+
+       cloud.push_back(cv::Point3d(inlierPtsImage1[n].x,inlierPtsImage1[n].y,cv::abs(X(n))));
+   }
+       //calculate reprojection error
+     //  cv::Mat_<double> xPt_img = cameraMatrix * projection2 * X;
     return cloud;
    }
+
+    */
 
 cv::Mat StructFromMotion::inverse(cv::Mat& matrix){
 
@@ -459,69 +439,7 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
 
 }
 
-cv::Mat_<double> StructFromMotion::LinearLSTriangulation(cv::Point3d u,cv::Matx34d P,cv::Point3d u1,
-                                                              cv::Matx34d P1){
-  //build A matrix
-  cv::Matx43d A(u.x*P(2,0)-P(0,0),
-                u.x*P(2,1)-P(0,1),
-                u.x*P(2,2)-P(0,2),
-                u.y*P(2,0)-P(1,0),
-                u.y*P(2,1)-P(1,1),
-                u.y*P(2,2)-P(1,2),
-                u1.x*P1(2,0)-P1(0,0),
-                u1.x*P1(2,1)-P1(0,1),
-                u1.x*P1(2,2)-P1(0,2),
-                u1.y*P1(2,0)-P1(1,0),
-                u1.y*P1(2,1)-P1(1,1),
-                u1.y*P1(2,2)-P1(1,2));
 
-  //build B vector
-  cv::Matx41d B(-(u.x*P(2,3)-P(0,3)),
-                -(u.y*P(2,3)-P(1,3)),
-                -(u1.x*P1(2,3)-P1(0,3)),
-                -(u1.y*P1(2,3)-P1(1,3)));
-
-  //solve for X
-  cv::Mat_<double> X;
-  cv::solve(A,B,X,cv::DECOMP_SVD);
-  return X;
-  }
-
-cv::Mat_<double> StructFromMotion::IterativeLinearLSTriangulation(cv::Point3d u,cv::Matx34d P,
-                                                                    cv::Point3d u1,cv::Matx34d P1) {
-      double wi = 1, wi1 = 1;
-      cv::Mat_<double> X(4,1);
-      for (int i=0; i<10; i++) { //Hartley suggests 10 iterations at most
-          cv::Mat_<double> X_ = LinearLSTriangulation(u,P,u1,P1);
-          X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X_(3) = 1.0;
-
-          //recalculate weights
-          double p2x = cv::Mat_<double>(cv::Mat_<double>(P).row(2)*X)(0);
-          double p2x1 = cv::Mat_<double>(cv::Mat_<double>(P1).row(2)*X)(0);
-
-          //breaking point
-          if(fabsf(wi - p2x) <= 0.8 && fabsf(wi1 - p2x1) <= 0.8) break;
-
-          wi = p2x;
-          wi1 = p2x1;
-
-          //reweight equations and solve
-          cv::Matx43d A((u.x*P(2,0)-P(0,0))/wi,       (u.x*P(2,1)-P(0,1))/wi,         (u.x*P(2,2)-P(0,2))/wi,
-                    (u.y*P(2,0)-P(1,0))/wi,       (u.y*P(2,1)-P(1,1))/wi,         (u.y*P(2,2)-P(1,2))/wi,
-                    (u1.x*P1(2,0)-P1(0,0))/wi1,   (u1.x*P1(2,1)-P1(0,1))/wi1,     (u1.x*P1(2,2)-P1(0,2))/wi1,
-                    (u1.y*P1(2,0)-P1(1,0))/wi1,   (u1.y*P1(2,1)-P1(1,1))/wi1,     (u1.y*P1(2,2)-P1(1,2))/wi1
-                    );
-          cv::Mat_<double> B = (cv::Mat_<double>(4,1) <<    -(u.x*P(2,3)    -P(0,3))/wi,
-                            -(u.y*P(2,3)  -P(1,3))/wi,
-                            -(u1.x*P1(2,3)    -P1(0,3))/wi1,
-                            -(u1.y*P1(2,3)    -P1(1,3))/wi1
-                            );
-
-          cv::solve(A,B,X_,cv::DECOMP_SVD);
-          X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X_(3) = 1.0;
-      }
-      return X;
-  }
 
 
 
