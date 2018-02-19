@@ -314,10 +314,10 @@ void StructFromMotion::AlignedPointsFromMatch(Keypoints& left,
 
 //align left and right point sets
 for(size_t i=	0;i<matches.size();i++){
-  //	queryIdx	is	the	"left"	image
-  featuresLeftAligned.push_back(left[matches[i].queryIdx].pt);
-  //trainIdx is the "right" image
-  featuresRightAligned.push_back(right[matches[i].trainIdx].pt);
+  //trainIdx is	the "left" image
+  featuresLeftAligned.push_back(left[matches[i].trainIdx].pt);
+  //queryIdx is the "right" image
+  featuresRightAligned.push_back(right[matches[i].queryIdx].pt);
   }
 
 }
