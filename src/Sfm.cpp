@@ -98,7 +98,7 @@ void StructFromMotion::recon(std::ifstream& file){
   cv::undistortPoints(rightPointsAligned, points2CC, matrixK, cv::Mat());
 
   // **(10) HOMOGENEOUS COORDINATE CONVERTION
-
+/*
   std::vector<cv::Point3d> points1Homo,points2Homo;
   for(size_t n=0;n<points1CC.size();n++){
 
@@ -110,37 +110,61 @@ void StructFromMotion::recon(std::ifstream& file){
   std::cout << "points1-pixels-coordinate:" << leftPointsAligned.at(0) << std::endl;
   std::cout << "points1-camera-coordinate:" << points1CC.at(0) << std::endl;
   std::cout << "points1-homogeneous-coordinate:" << points1Homo.at(0) << std::endl;
-
+*/
   // **(10) TRIANGULATION
-  cv::Mat cloud;
+unsigned int pts_size = keypoints1.size();
+
+  cv::Mat cloud(1,points1CC.size(),CV_32FC4);
   cv::triangulatePoints(projection1,projection2,points1CC,points2CC,cloud);
 
   // **(11) CONVERTION CAMERA COORDINATE TO WORLD COORDINATE
-  cv::Mat  pointcloudWorld;
+
+
+  std::vector<cv::Point3f>  pointcloudWorld;
   cv::convertPointsFromHomogeneous(cloud.t(),pointcloudWorld);
-  std::cout << "pointcloudWorld:"<<"\n" << pointcloudWorld << std::endl;
-
-  cv::Mat_<double> pointcloudMat;
-  //pointcloudWorld.convertTo(pointcloudMat,CV_64FC1);
-
+  std::cout << "pointcloudWorld:"<<"\n" << pointcloudWorld.at(0) << std::endl;
   std::vector<cv::Point3d> pointcloud;
-  for(int n=0;n<pointcloudWorld.rows;n++){
+  for (unsigned int i=0; i<points1CC.size(); i++) {
 
-      pointcloud.push_back(cv::Point3d(pointcloudWorld.at<double>(1),
-                                       pointcloudWorld.at<double>(1),
-                                       pointcloudWorld.at<double>(2)));
+                  pointcloud.push_back(pointcloudWorld[i]);
 
-    }
+  }
 
-  std::cout << "pointcloud: vector"<<"\n" << pointcloud.at(0) << std::endl;
 
+/*
+  // Get the MODEL INFO
+  std::vector<cv::Point3d> list_points3d_model = pointcloudWorld;  // list with model 3D coordinates
+  cv::Mat descriptors_model = model.get_descriptors();                  // list with descriptors of each 3D coordinate
+  // -- Step 1: Robust matching between model descriptors and scene descriptors
+  std::vector<cv::DMatch> good_matches;       // to obtain the model 3D points  in the scene
+  std::vector<cv::KeyPoint> keypoints_scene;  // to obtain the 2D points of the scene
+  if(fast_match)
+  {
+      rmatcher.fastRobustMatch(frame, good_matches, keypoints_scene, descriptors_model);
+  }
+  else
+  {
+      rmatcher.robustMatch(frame, good_matches, keypoints_scene, descriptors_model);
+  }
+
+  // -- Step 2: Find out the 2D/3D correspondences
+  std::vector<cv::Point3f> list_points3d_model_match; // container for the model 3D coordinates found in the scene
+  std::vector<cv::Point2f> list_points2d_scene_match; // container for the model 2D coordinates found in the scene
+  for(unsigned int match_index = 0; match_index < good_matches.size(); ++match_index)
+  {
+      cv::Point3f point3d_model = list_points3d_model[ good_matches[match_index].trainIdx ];   // 3D point from model
+      cv::Point2f point2d_scene = keypoints_scene[ good_matches[match_index].queryIdx ].pt;    // 2D point from the scene
+      list_points3d_model_match.push_back(point3d_model);                                      // add 3D point
+      list_points2d_scene_match.push_back(point2d_scene);                                      // add 2D point
+  }
+*/
 
 
   //StructFromMotion::Find2D3DCorrespondences(2,std::vector<cv::Point3f>& ppcloud,Points2f& imgPoints);
 
   // **(12) POINTCLOUD VISUALIZER
   cv::Matx33d matrixCam = (cv::Matx33d)matrixK;
-  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloudWorld);
+  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloud);
 
 
   // cv::Mat tempImage2 = img2;
@@ -355,7 +379,7 @@ void StructFromMotion::projection(const cv::Mat& relativeRotationCam,const cv::M
 
   }
 
-void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,cv::Mat& pointcloud){
+void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,std::vector<cv::Point3d>& pointcloud){
 
   // Create a viz window
   cv::viz::Viz3d visualizer("Viz window");
