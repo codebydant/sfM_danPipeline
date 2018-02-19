@@ -37,22 +37,25 @@ void StructFromMotion::recon(std::ifstream& file){
   StructFromMotion::matchingImShow(matchImage);
 
   // **(4) KEYPOINTS 2F --> only pt.x and pt.y [x,y] without angle, point size, etc...
-  Points2f leftPoints2F = StructFromMotion::keypoints2F(keypoints1,good_matches);
-  Points2f rightPoints2F = StructFromMotion::keypoints2F(keypoints2,good_matches);
+  Points2f keypoints1_2F = StructFromMotion::keypoints2F(keypoints1,good_matches);
+  Points2f keypoints2_2F = StructFromMotion::keypoints2F(keypoints2,good_matches);
 
   Points2f leftPointsAligned;
   Points2f rightPointsAligned;
 
   if(good_matches.size() <= 0) {
       //points already aligned...
-      leftPointsAligned = leftPoints2F;
-      rightPointsAligned = rightPoints2F;
+      leftPointsAligned = keypoints1_2F;
+      rightPointsAligned = keypoints2_2F;
     }else {
 
         // **(4.1) ALIGNED POINTS
         StructFromMotion::AlignedPointsFromMatch(keypoints1,keypoints2,good_matches,
-                                                 leftPointsAligned,rightPointsAligned);
+                                                leftPointsAligned,rightPointsAligned);
      }
+
+  std::cout << "pts1 " << keypoints1.size() << " (orig pts " << leftPointsAligned.size() << ")" << std::endl;
+  std::cout << "pts2 " << keypoints2.size() << " (orig pts " << rightPointsAligned.size() << ")" << std::endl;
 
   // **(5) CAMERA MATRIX
   cv::Mat_<double> matrixK = StructFromMotion::getCameraMatrix();
@@ -79,44 +82,71 @@ void StructFromMotion::recon(std::ifstream& file){
   StructFromMotion::projection(relativeRotationCam,relativeTranslaCam, projection1,projection2);
   }
 
+  double minVal,maxVal;
+  cv::minMaxIdx(leftPointsAligned,&minVal,&maxVal);
+
+  cv::Mat matrixH(3,3,CV_32FC3);
+  cv::Mat inliersMask;
+  matrixH = cv::findHomography(leftPointsAligned,rightPointsAligned,cv::RANSAC,0.004 * maxVal,inliersMask);
+  int numInliers = cv::countNonZero(inliersMask);
+  std::cout << "numInliers betwen 2 views =" << numInliers<<std::endl;
+
   // **(9) IMAGE COORDINATE TO CAMERA COORDINATE (pixels --> metric)
 
-  cv::Mat points1Homo,points2Homo;
-  cv::undistortPoints(leftPointsAligned, points1Homo, matrixK, cv::Mat());
-  cv::undistortPoints(rightPointsAligned, points2Homo, matrixK, cv::Mat());
+  Points2f points1CC,points2CC;
+  cv::undistortPoints(leftPointsAligned, points1CC, matrixK, cv::Mat());
+  cv::undistortPoints(rightPointsAligned, points2CC, matrixK, cv::Mat());
+
+  // **(10) HOMOGENEOUS COORDINATE CONVERTION
+
+  std::vector<cv::Point3d> points1Homo,points2Homo;
+  for(size_t n=0;n<points1CC.size();n++){
+
+    points1Homo.push_back(cv::Point3d(points1CC[n].x,points1CC[n].y,1));
+    points2Homo.push_back(cv::Point3d(points2CC[n].x,points2CC[n].y,1));
+
+   }
+
+  std::cout << "points1-pixels-coordinate:" << leftPointsAligned.at(0) << std::endl;
+  std::cout << "points1-camera-coordinate:" << points1CC.at(0) << std::endl;
+  std::cout << "points1-homogeneous-coordinate:" << points1Homo.at(0) << std::endl;
 
   // **(10) TRIANGULATION
   cv::Mat cloud;
-  cv::triangulatePoints(projection1,projection2,points1Homo,points2Homo,cloud);
-
-  std::cout << "triangulate points, depth [z]:" << cloud << std::endl;
-
-  /*
-
-  std::vector<cv::Point3d> cloudVector;
-  cloudVector = cloud.reshape(1,1);
-
-  std::cout << "cloudVector size:" << cloudVector.size() << std::endl;
-  std::vector<cv::Point3d> pointcloud;
- for(size_t n=0;n<points1Homo.rows;n++){
-
-   pointcloud.push_back(cv::Point3d(points1Homo[n].x,points2Homo[n].y,cloudVector.at(n)));
-
-  }
-  */
+  cv::triangulatePoints(projection1,projection2,points1CC,points2CC,cloud);
 
   // **(11) CONVERTION CAMERA COORDINATE TO WORLD COORDINATE
-  cv::Mat pointcloudWorld;
+  cv::Mat  pointcloudWorld;
   cv::convertPointsFromHomogeneous(cloud.t(),pointcloudWorld);
+  std::cout << "pointcloudWorld:"<<"\n" << pointcloudWorld << std::endl;
+
+  cv::Mat_<double> pointcloudMat;
+  //pointcloudWorld.convertTo(pointcloudMat,CV_64FC1);
+
+  std::vector<cv::Point3d> pointcloud;
+  for(int n=0;n<pointcloudWorld.rows;n++){
+
+      pointcloud.push_back(cv::Point3d(pointcloudWorld.at<double>(1),
+                                       pointcloudWorld.at<double>(1),
+                                       pointcloudWorld.at<double>(2)));
+
+    }
+
+  std::cout << "pointcloud: vector"<<"\n" << pointcloud.at(0) << std::endl;
+
+
+
+  //StructFromMotion::Find2D3DCorrespondences(2,std::vector<cv::Point3f>& ppcloud,Points2f& imgPoints);
+
+  // **(12) POINTCLOUD VISUALIZER
+  cv::Matx33d matrixCam = (cv::Matx33d)matrixK;
+  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloudWorld);
+
 
   // cv::Mat tempImage2 = img2;
   // cv::Mat_<double> projectionTemp = projection2;
   // std::vector<cv::Point3d> pointcloud=cloud;
   // cv::Mat_<double> matrixE12 = matrixE;
-
-  // **(12) POINTCLOUD VISUALIZER
-  cv::Matx33d matrixCam = (cv::Matx33d)matrixK;
-  StructFromMotion::visualizerPointCloud(matrixCam,img1,img2,relativeRotationCam,relativeTranslaCam,pointcloudWorld);
 
  /*    tempImage2 = img2;
        projectionTemp = projection2;
@@ -218,7 +248,6 @@ MatchesVector StructFromMotion::obtenerMatches(cv::Mat& descriptors1,cv::Mat& de
   matcherFlan ->match(descriptors2,descriptors1,matches21);
 
   //CROSS-CHECK FILTER
-
   for (size_t i=0; i < matches12.size(); i++){
       cv::DMatch forward = matches12[i];
       cv::DMatch backward = matches21[forward.trainIdx];
@@ -330,7 +359,7 @@ void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& i
 
   // Create a viz window
   cv::viz::Viz3d visualizer("Viz window");
-  cv::viz::WCoordinateSystem ucs(100);
+  cv::viz::WCoordinateSystem ucs(0.3);
 
   //Create a virtual camera
   cv::viz::WCameraPosition cam1(cameraMatrix, img1, 150,cv::viz::Color::white());
@@ -343,64 +372,82 @@ void StructFromMotion::visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& i
   visualizer.setBackgroundColor(cv::viz::Color::black());
   visualizer.showWidget("Coordinate Widget", ucs);
   visualizer.showWidget("Point3D", point3d);
- // visualizer.showWidget("Camera1", cam1);
- // visualizer.showWidget("Camera2", cam2);
+  //visualizer.showWidget("Camera1", cam1);
+  //visualizer.showWidget("Camera2", cam2);
 
   cv::Affine3d pose(cameraR,cameraT);
 
-//  visualizer.setWidgetPose("Camera2", pose);
- // visualizer.setWidgetPose("Point3D", pose);
+  //visualizer.setWidgetPose("Camera2", pose);
+  //visualizer.setWidgetPose("Point3D", pose);
 
   // visualization loop
-  while(cv::waitKey(0) && !visualizer.wasStopped()){
+ while(cv::waitKey(0) && !visualizer.wasStopped()){
 
     visualizer.spin();
   }
+
+/*
+  cv::viz::Viz3d myWindow("Point Cloud");
+
+          int height = 480, width = 640;
+          cv::Mat pCloud(height, width, CV_32FC3);
+
+          float fx = 525.0f, // default
+                    fy = 525.0f,
+                    cx = 319.5f,
+                    cy = 239.5f;
+
+          cv::Mat colorImage;
+          cv::Mat depth, depth_flt;
+
+          colorImage = img1;
+          depth = cv::imread("depth.png", -1);
+          cv::imshow("rgb", colorImage);
+          cv::imshow("depth", depth);
+
+          depth.convertTo(depth_flt, CV_32FC1, 1.f / 5000.f);
+          depth_flt.setTo(std::numeric_limits<float>::quiet_NaN(), depth == 0);
+          depth = depth_flt;
+
+          for (int y = 0; y < 480; y++){
+                  for (int x = 0; x < 640; x++){
+                          if (depth.at<float>(y, x) < 8.0 && depth.at<float>(y, x) > 0.4){
+                                  //RGB-D Dataset
+                                  float Z = depth.at<float>(y, x);
+                                  float X = (x - cx) * Z / fx;
+                                  float Y = (y - cy) * Z / fy;
+                                  pCloud.at<cv::Vec3f>(y, x) = cv::Vec3f(X, Y, Z);
+                          }
+                          else{
+                                  //RGB-D Dataset
+                                  pCloud.at<cv::Vec3f>(y, x) = cv::Vec3f(0.f, 0.f, 0.f);
+                          }
+                  }
+          }
+
+          cv::viz::WCloud wcloud(pointcloud, colorImage);
+          myWindow.showWidget("CLOUD", wcloud);
+          myWindow.spin();
+
+
+*/
+
+
+
+
+
+
 }
 
 /*
-std::vector<cv::Point3d> StructFromMotion::triangulation(std::vector<cv::Point2f>& points1,std::vector<cv::Point2f>& points2,cv::Mat_<double>& projection1,cv::Mat_<double>& projection2,cv::Mat& inliers,cv::Mat_<double>& cameraMatrix,std::vector<cv::po>& pointcloud){
-
     std::vector<cv::Point3d> inlierPtsImage1, inlierPtsImage2;
-
-
     for (int i=0;i<inliers.rows;i++){
 
          inlierPtsImage1.push_back(cv::Point3d(points1[i].x,points1[i].y,1));
          inlierPtsImage2.push_back(cv::Point3d(points2[i].x,points2[i].y,1));
-    }
+    }    
 
-       cv::Mat_<double> X;
-       std::vector<cv::Point3d> cloud;
-
-       for(unsigned int n=0;n<inlierPtsImage1.size();n++){
-
-       cv::Mat_<double> invK = inverse(cameraMatrix);
-       cv::Mat_<double> um = invK * cv::Mat_<double>(inlierPtsImage1.at(n));
-       inlierPtsImage1.at(n) = um.at<cv::Point3d>(n);
-
-       cv::Mat_<double> um1 = invK* cv::Mat_<double>(inlierPtsImage2.at(n));
-      inlierPtsImage2.at(n) = um1.at<cv::Point3d>(n);
-       //triangulate
-       cv::Mat_<double> X = LinearLSTriangulation(inlierPtsImage1.at(n),projection1,inlierPtsImage2.at(n),projection2);
-
-
-
-
-           cv::triangulatePoints()
-
-       X.push_back(StructFromMotion::LinearLSTriangulation(inlierPtsImage1.at(n),projection1,
-                                                                   inlierPtsImage2.at(n),projection2));
-
-
-       cloud.push_back(cv::Point3d(inlierPtsImage1[n].x,inlierPtsImage1[n].y,cv::abs(X(n))));
-   }
-       //calculate reprojection error
-     //  cv::Mat_<double> xPt_img = cameraMatrix * projection2 * X;
-    return cloud;
-   }
-
-    */
+*/
 
 cv::Mat StructFromMotion::inverse(cv::Mat& matrix){
 
@@ -439,6 +486,44 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
 
 }
 
+void StructFromMotion::Find2D3DCorrespondences(int working_view,std::vector<cv::Point3f>& ppcloud,
+	Points2f& imgPoints) {
+	ppcloud.clear();
+	imgPoints.clear();
+
+	std::vector<int> pcloud_status(ppcloud.size(),0);
+
+
+	/*
+	for (set<int>::iterator done_view = good_views.begin(); done_view != good_views.end(); ++done_view)
+	{
+		int old_view = *done_view;
+		//check for matches_from_old_to_working between i'th frame and <old_view>'th frame (and thus the current cloud)
+		std::vector<cv::DMatch> matches_from_old_to_working = matches_matrix[std::make_pair(old_view,working_view)];
+
+		for (unsigned int match_from_old_view=0; match_from_old_view < matches_from_old_to_working.size(); match_from_old_view++) {
+			// the index of the matching point in <old_view>
+			int idx_in_old_view = matches_from_old_to_working[match_from_old_view].queryIdx;
+
+			//scan the existing cloud (pcloud) to see if this point from <old_view> exists
+			for (unsigned int pcldp=0; pcldp<pcloud.size(); pcldp++) {
+				// see if corresponding point was found in this point
+				if (idx_in_old_view == pcloud[pcldp].imgpt_for_img[old_view] && pcloud_status[pcldp] == 0) //prevent duplicates
+				{
+					//3d point in cloud
+					ppcloud.push_back(pcloud[pcldp].pt);
+					//2d point in image i
+					imgPoints.push_back(imgpts[working_view][matches_from_old_to_working[match_from_old_view].trainIdx].pt);
+
+					pcloud_status[pcldp] = 1;
+					break;
+				}
+			}
+		}
+	}
+	cout << "found " << ppcloud.size() << " 3d-2d point correspondences"<<endl;
+	*/
+}
 
 
 
