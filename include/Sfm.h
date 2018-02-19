@@ -1,7 +1,6 @@
 //----------------------------------------------
 //HEADERS
 //----------------------------------------------
-//#include "Common.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -33,8 +32,6 @@ class StructFromMotion{
   //----------------------------------------------
   //PIPELINE FUNCTIONS
   //----------------------------------------------
-
-  int recon();
 
   void recon( std::ifstream& file);
 
@@ -74,12 +71,6 @@ class StructFromMotion{
   void setConstructor(cv::Mat& img1,cv::Mat& img2);
 
   //----------------------------------------------
-  //TRIANGULATION FUNCTIONS
-  //----------------------------------------------
-
-
-
-  //----------------------------------------------
   //INVERSE MATRIX FUNCTION EIGEN
   //----------------------------------------------
 
@@ -87,11 +78,20 @@ class StructFromMotion{
 
   double determinante(cv::Mat& relativeRotationCam);
 
-  bool CheckCoherentRotation(cv::Mat_<double>& R);
+  //----------------------------------------------
+  //FUNCTION CHECK ROTATION MATRIX (Must be det=1)
+  //----------------------------------------------
 
-  struct CloudPoint;
+  bool CheckCoherentRotation(cv::Mat_<double>& R); 
+
+  //----------------------------------------------
+  //FUNCTION ALIGNED POINTS
+  //----------------------------------------------
 
   void AlignedPointsFromMatch(Keypoints& left,Keypoints& right, MatchesVector& matches, Points2f& featuresLeftAligned,Points2f& featuresRightAligned);
+
+  void Find2D3DCorrespondences(int working_view,std::vector<cv::Point3f>& ppcloud,
+          Points2f& imgPoints);
 
 
 
