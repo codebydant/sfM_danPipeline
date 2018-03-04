@@ -11,37 +11,67 @@
 
 using Keypoints = std::vector<cv::KeyPoint>;
 using MatchesVector = std::vector<cv::DMatch>;
-using Points2d = std::vector<cv::Point2f>;
 using Points2f = std::vector<cv::Point2f>;
 using Points3f = std::vector<cv::Point3f>;
-using Points3d = std::vector<cv::Point3d>;
+using Map2D3D = std::map<int,Point3D2DMatch>;
 
 struct Features {
 
     Keypoints	kps;
-    Points2d	pt2D;
+    Points2f	pt2D;
     cv::Mat	descriptors;
-    std::string imagePath;
+    std::string imagePath;    
 
-  };
+};
 
 struct Matches {
 
     MatchesVector matches12;
     MatchesVector matches21;
-    MatchesVector goodMatches;
-    std::vector<int> trainIdx;
-    std::vector<int> queryIdx;
-    Features leftReference;
-    Features rightReference;
-
+    MatchesVector goodMatches;    
 
   };
 
-struct PointCloud {
+struct Pt2DAligned{
 
-    Points3d points3D;
-  };
+  Points2f Pt2D_left;
+  Points2f Pt2D_right;
+  std::vector<int> trainIdx;
+  std::vector<int> queryIdx;
+
+};
+
+struct idImagePair{
+
+  size_t   i;
+  size_t   j;
+};
+
+struct CameraData{
+
+  cv::Mat_<double> K;
+  cv::Mat_<double> invK;
+  cv::Mat_<double> distCoef;
+  double fx;
+  double fy;
+  double cx;
+  double cy;
+
+};
+
+struct Point3D {
+
+    cv::Point3f pt;
+    std::map<int,int> pt3D2D;
+
+};
+
+struct Point3D2DMatch{
+
+  Points2f pts2D;
+  Points3f pts3D;
+
+};
 
 
 void AlignedPointsFromMatch(Features& left,Features& right, MatchesVector& matches,

@@ -10,15 +10,19 @@
 #include <eigen3/Eigen/Dense>
 #include "Structures.h"
 
+using FeaturesVector = std::vector<Features>;
+using Pt2DAlignedVector = std::vector<Pt2DAligned>;
 
 class StructFromMotion{ 
 
   private:
   std::vector<cv::Mat>               images;
   int                                totalImages;
+  CameraData                         matrixK;
   std::vector<Features>              featuresImages;
-  std::vector<Features>              featuresImagesBetter;
+  std::vector<Pt2DAligned>           pts2DAligVec;
   std::vector<Matches>               matchesImages;
+  std::vector<Point3D>               pointcloud;
   std::vector<std::string>           imagesPath;
   std::vector<cv::Mat_<double>>      projectionMatrices;
   cv::Ptr<cv::Feature2D>             ptrFeature2D;
@@ -42,7 +46,7 @@ class StructFromMotion{
     @ BRUTEFORCE_SL2 = 6
     */
 
-    ptrFeature2D = cv::xfeatures2d::SURF::create(2300.0);
+    ptrFeature2D = cv::xfeatures2d::SURF::create(2000.0);
     matcherFlan = cv::DescriptorMatcher::create("FlannBased");
 
   }
@@ -60,7 +64,7 @@ class StructFromMotion{
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
 
-   Features obtenerFeatures(cv::Mat& image,std::string& path);
+   Features obtenerFeatures(const cv::Mat& image,const std::string& path);
    void loadFeatures(std::vector<cv::Mat>& imagesList,int& totalImages,
                      std::vector<Features>& ftsVector,std::vector<std::string>& imagePath);
 
@@ -68,45 +72,47 @@ class StructFromMotion{
   //FEATURE MATCHING
   //===============================================
 
-  Matches obtenerMatches(cv::Mat& descriptors1,cv::Mat& descriptors2);
-  void loadMatches(std::vector<Features>& ftsVec,std::vector<Matches>& matchesImages,
+  Matches obtenerMatches(const cv::Mat& descriptors1,const cv::Mat& descriptors2);
+  void loadMatches(const std::vector<Features>& ftsVec,std::vector<Matches>& matchesImages,
                    int& numImages);
-  cv::Mat imageMatching(cv::Mat& img1, Keypoints& keypoints1,
-                        cv::Mat& img2, Keypoints& keypoints2,MatchesVector& matches);
+  cv::Mat imageMatching(const cv::Mat& img1,const Keypoints& keypoints1,
+                        const cv::Mat& img2,const Keypoints& keypoints2,const MatchesVector& matches);
   void matchingImShow(cv::Mat& matchImage);
+
+  void guardarIdx(Matches& matches,Pt2DAligned& pt);
 
   //===============================================
   //CONVERTION KEYPOINTS TO POINTS2D
   //===============================================
 
-  void keypoints2F(Keypoints& keypoints, Points2d& points2D);
+  void keypoints2F(Keypoints& keypoints, Points2f& points2D);
 
   //===============================================
   //CAMERA MATRIX
   //===============================================
 
-  cv::Mat_<double> getCameraMatrix();
+  void getCameraMatrix(CameraData& intrinsics);
 
   //===============================================
   //ESSENTIAL MATRIX
   //===============================================
 
-  cv::Mat_<double> findEssentialMatrix(Points2d& leftPoints,Points2d& rightPoints,
+  cv::Mat_<double> findEssentialMatrix(const Points2f& leftPoints,const Points2f& rightPoints,
                                        cv::Mat_<double>& cameraMatrix,cv::Mat& mask);
 
   //===============================================
   //ROTATION AND TRASLATION MATRIX[R|t]
   //===============================================
 
-  void cameraPose(Points2d& points1,Points2d& points2,double& fx,double cx,double cy,
-                  cv::Mat& rot,cv::Mat& tra,cv::Mat& mask,cv::Mat_<double>& essentialMatrix );
+  void cameraPose(const Points2f& points1,const Points2f& points2,const double& fx,const double cx,const double cy,
+                  cv::Mat& rot,cv::Mat& tra,const cv::Mat& mask,const cv::Mat_<double>& essentialMatrix );
 
   //===============================================
   //PROJECTION MATRIX
   //===============================================
 
-  void projection(const cv::Mat& relativeRotationCam,const cv::Mat& relativeTranslaCam,
-                  cv::Mat& projection1, cv::Mat& projection2);
+  void projection(cv::Mat& relativeRotationCam,const cv::Mat& relativeTranslaCam,
+                  std::vector<cv::Mat_<double>>& matricesProVec,bool& status);
 
 
   //===============================================
@@ -115,20 +121,25 @@ class StructFromMotion{
 
   bool CheckCoherentRotation(cv::Mat& R);
 
+ int findHomographyInliers(const Features& f1,const Features& f2,const Matches& matches,Pt2DAligned& ptsAligned);
+
+ void best2Views(std::vector<Features>& fts,std::map<float,idImagePair>& bestPair,std::vector<Pt2DAligned>& pts2dAlig);
+
   //===============================================
   //FUNCTION ALIGNED POINTS
   //===============================================
 
-  void AlignedPoints( Features& left, Features& right,Matches& matches);
+  void AlignedPoints(const Features& left,const Features& right,
+                     const Matches& matches,std::vector<Pt2DAligned>& pts2dAlig);
+  void AlignedPoints(const Features& left,const Features& right,const Matches& matches, Pt2DAligned& pts2dAlig);
 
-  void AlignedPointsFromMatch( Features& left, Features& right,
-                               Matches& matches,Features& leftAligned,Features& rightAligned);
+
 
   //===============================================
   //FUNCTION CORRESPONDENCES 2D-3D
   //===============================================
 
-
+  void map2D3D(std::vector<cv::Mat_<double>>& ProjectionVector,std::vector<Pt2DAligned>& pts,CameraData& matrixK,bool& status, PointCloud& pointcloud);
 
   //===============================================
   //POINTCLOUD VISUALIZER
@@ -143,7 +154,7 @@ class StructFromMotion{
   cv::Mat inverse(cv::Mat& matrix);
   double determinante(cv::Mat& relativeRotationCam);
 
-  Points3d cloudPointsCoordinates(const Points3d cloudpoint);
+ // std::vector<cv::Point3d> cloudPointsCoordinates(const std::vector<cv::Point3d> cloudpoint);
 
 
 };//Fin class
