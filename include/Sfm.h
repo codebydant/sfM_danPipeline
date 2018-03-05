@@ -12,21 +12,25 @@
 
 using FeaturesVector = std::vector<Features>;
 using Pt2DAlignedVector = std::vector<Pt2DAligned>;
+using MatchMatrix = std::vector<std::vector<Matching>>;
+using Map2D3D = std::map<int,Point3D2DMatch>;
 
 class StructFromMotion{ 
 
   private:
-  std::vector<cv::Mat>               images;
-  int                                totalImages;
-  CameraData                         matrixK;
-  std::vector<Features>              featuresImages;
-  std::vector<Pt2DAligned>           pts2DAligVec;
-  std::vector<Matches>               matchesImages;
-  std::vector<Point3D>               pointcloud;
-  std::vector<std::string>           imagesPath;
-  std::vector<cv::Mat_<double>>      projectionMatrices;
-  cv::Ptr<cv::Feature2D>             ptrFeature2D;
-  cv::Ptr<cv::DescriptorMatcher>     matcherFlan;
+  std::vector<cv::Mat>                    nImages;
+  int                                     totalImages;
+  CameraData                              matrixK;
+  std::vector<Features>                   nFeaturesImages;
+  std::vector<Pt2DAligned>                pts2DAligVec;
+  std::vector<Matching>                   nFeaturesMatches;
+  std::vector<std::vector<Matching>>      nFeatureMatchMatrix;
+  std::vector<Point3D>                    nReconstructionCloud;
+  std::vector<std::string>                nImagesPath;
+  std::vector<cv::Mat_<double>>           projectionMatrices;
+  cv::Ptr<cv::Feature2D>                   ptrFeature2D;
+  cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
+  double                                  NN_MATCH_RATIO;
 
 
   public:
@@ -46,8 +50,10 @@ class StructFromMotion{
     @ BRUTEFORCE_SL2 = 6
     */
 
-    ptrFeature2D = cv::xfeatures2d::SURF::create(2000.0);
-    matcherFlan = cv::DescriptorMatcher::create("FlannBased");
+    ptrFeature2D = cv::ORB::create(5000.0);
+    matcherFlan = cv::DescriptorMatcher::create("BruteForce-Hamming");
+    NN_MATCH_RATIO = 0.8f;
+
 
   }
 
@@ -57,29 +63,26 @@ class StructFromMotion{
 
   void recon( std::ifstream& file);
 
-  void imagesLOAD(std::ifstream& file,std::vector<cv::Mat>& imageSet,int& numImages,
-                  std::vector<std::string>& textFile);
+  void imagesLOAD(std::ifstream& file);
 
   //===============================================
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
 
-   Features obtenerFeatures(const cv::Mat& image,const std::string& path);
-   void loadFeatures(std::vector<cv::Mat>& imagesList,int& totalImages,
-                     std::vector<Features>& ftsVector,std::vector<std::string>& imagePath);
+   Features obtenerFeatures(const cv::Mat& image);
+   void extractFeatures();
 
   //===============================================
   //FEATURE MATCHING
   //===============================================
 
-  Matches obtenerMatches(const cv::Mat& descriptors1,const cv::Mat& descriptors2);
-  void loadMatches(const std::vector<Features>& ftsVec,std::vector<Matches>& matchesImages,
-                   int& numImages);
+  Matching obtenerMatches(const Features& left,const Features& right);
+ void matchFeatures();
   cv::Mat imageMatching(const cv::Mat& img1,const Keypoints& keypoints1,
-                        const cv::Mat& img2,const Keypoints& keypoints2,const MatchesVector& matches);
+                        const cv::Mat& img2,const Keypoints& keypoints2,const Matching& matches);
   void matchingImShow(cv::Mat& matchImage);
 
-  void guardarIdx(Matches& matches,Pt2DAligned& pt);
+  void guardarIdx(Matching& matches,Pt2DAligned& pt);
 
   //===============================================
   //CONVERTION KEYPOINTS TO POINTS2D
@@ -97,8 +100,8 @@ class StructFromMotion{
   //ESSENTIAL MATRIX
   //===============================================
 
-  cv::Mat_<double> findEssentialMatrix(const Points2f& leftPoints,const Points2f& rightPoints,
-                                       cv::Mat_<double>& cameraMatrix,cv::Mat& mask);
+  cv::Mat findEssentialMatrix(const Points2f& leftPoints,const Points2f& rightPoints,
+                                       const cv::Mat& cameraMatrix,cv::Mat& mask);
 
   //===============================================
   //ROTATION AND TRASLATION MATRIX[R|t]
@@ -121,17 +124,16 @@ class StructFromMotion{
 
   bool CheckCoherentRotation(cv::Mat& R);
 
- int findHomographyInliers(const Features& f1,const Features& f2,const Matches& matches,Pt2DAligned& ptsAligned);
+  int findHomographyInliers(const Features& f1,const Features& f2,const Matching& matches);
 
- void best2Views(std::vector<Features>& fts,std::map<float,idImagePair>& bestPair,std::vector<Pt2DAligned>& pts2dAlig);
+ std::map<float,ImagePair> best2Views();
 
   //===============================================
   //FUNCTION ALIGNED POINTS
   //===============================================
 
-  void AlignedPoints(const Features& left,const Features& right,
-                     const Matches& matches,std::vector<Pt2DAligned>& pts2dAlig);
-  void AlignedPoints(const Features& left,const Features& right,const Matches& matches, Pt2DAligned& pts2dAlig);
+  void AlignedPointsFromMatch(const Features& left,const Features& right,const Matching& matches,Features& alignedL,Features& alignedR);
+  void AlignedPoints(const Features& left,const Features& right,const Matching& matches, Features& alignedL, Features& alignedR,std::vector<int>& idLeftOrigen,std::vector<int>& idRightOrigen);
 
 
 
@@ -139,13 +141,13 @@ class StructFromMotion{
   //FUNCTION CORRESPONDENCES 2D-3D
   //===============================================
 
-  void map2D3D(std::vector<cv::Mat_<double>>& ProjectionVector,std::vector<Pt2DAligned>& pts,CameraData& matrixK,bool& status, PointCloud& pointcloud);
+  void map2D3D(const Features& left,const Features& right,const cv::Matx34f& P1,const cv::Matx34f& P2,const Matching& matches,const CameraData& matrixK,const ImagePair imagePair,std::vector<Point3D>& pointcloud);
+  void baseTriangulation();
 
   //===============================================
   //POINTCLOUD VISUALIZER
   //===============================================
-  void visualizerPointCloud(cv::Matx33d& cameraMatrix,cv::Mat& img1,
-                            cv::Mat& img2,cv::Mat& cameraR,cv::Mat& cameraT,Points3f& pointcloud);
+  void visualizerPointCloud(const std::vector<Point3D>& pointcloud);
 
   //===============================================
   //INVERSE MATRIX-DETERMINANT FUNCTION EIGEN

@@ -10,27 +10,21 @@
 //***********************************************
 
 using Keypoints = std::vector<cv::KeyPoint>;
-using MatchesVector = std::vector<cv::DMatch>;
+using Matching = std::vector<cv::DMatch>;
 using Points2f = std::vector<cv::Point2f>;
 using Points3f = std::vector<cv::Point3f>;
-using Map2D3D = std::map<int,Point3D2DMatch>;
+
 
 struct Features {
 
     Keypoints	kps;
     Points2f	pt2D;
     cv::Mat	descriptors;
-    std::string imagePath;    
+
 
 };
 
-struct Matches {
 
-    MatchesVector matches12;
-    MatchesVector matches21;
-    MatchesVector goodMatches;    
-
-  };
 
 struct Pt2DAligned{
 
@@ -66,6 +60,12 @@ struct Point3D {
 
 };
 
+struct ImagePair{
+  size_t left;
+  size_t right;
+
+};
+
 struct Point3D2DMatch{
 
   Points2f pts2D;
@@ -74,6 +74,6 @@ struct Point3D2DMatch{
 };
 
 
-void AlignedPointsFromMatch(Features& left,Features& right, MatchesVector& matches,
+void AlignedPointsFromMatch(Features& left,Features& right, Matching& matches,
                             Features& featuresLeftAligned,Features& featuresRightAligned);
 
