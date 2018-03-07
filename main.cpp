@@ -17,11 +17,11 @@ int main(int argc, char **argv ){
 
   std::ifstream file("temple/list.txt");
   StructFromMotion sf;
-  sf.recon(file);
+  int success = sf.run_SFM(file);
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
 
-return 0;
+  return 0;
 
 }//end main
