@@ -24,23 +24,6 @@ struct Features {
 
 };
 
-
-
-struct Pt2DAligned{
-
-  Points2f Pt2D_left;
-  Points2f Pt2D_right;
-  std::vector<int> trainIdx;
-  std::vector<int> queryIdx;
-
-};
-
-struct idImagePair{
-
-  size_t   i;
-  size_t   j;
-};
-
 struct CameraData{
 
   cv::Mat_<double> K;
@@ -72,8 +55,4 @@ struct Point3D2DMatch{
   Points3f pts3D;
 
 };
-
-
-void AlignedPointsFromMatch(Features& left,Features& right, Matching& matches,
-                            Features& featuresLeftAligned,Features& featuresRightAligned);
 
