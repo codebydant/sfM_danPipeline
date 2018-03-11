@@ -95,8 +95,8 @@ add_custom_target(headers SOURCES ${HEADER_FILES} ${SOURCES_FILES})
 # DATA
 ##############################################################################
 
-configure_file("data/soup1.jpg" ${CMAKE_CURRENT_BINARY_DIR}/bin/soup1.jpg COPYONLY)
-configure_file("data/soup2.jpg" ${CMAKE_CURRENT_BINARY_DIR}/bin/soup2.jpg COPYONLY)
+configure_file("data/temple" ${CMAKE_CURRENT_BINARY_DIR}/bin/ COPYONLY)
+configure_file("data/camera-calibration-data.xml" ${CMAKE_CURRENT_BINARY_DIR}/bin/camera-calibration-data.xml COPYONLY)
 
 ##############################################################################
 # EJECUTABLES
