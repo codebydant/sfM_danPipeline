@@ -7,9 +7,8 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 * Altura del fuste
 * Díametro del fuste
 * Volumen de la copa
-  
-  yeah
-  
+ 
+   
 ### Resources
 
 * Homepage: <http://opencv.org>
@@ -20,7 +19,6 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 * OpenCV 3.2.0
 * OpenCV contrib 3.2.0
 * QT Creator 4.8
-* PCL Library 
 * Cmake 10.2
 * Eigen
 * Ceres
@@ -44,6 +42,6 @@ cd /3D_recons_build_directory/bin
 
 ### Nota:
 El fichero CMakeLists.txt sirve para compilar el programa con CMake.
-El fichero CMakeLists.txt.user es utilizado por QTCreator para compilar el programa.
+
 
 
