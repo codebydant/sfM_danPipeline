@@ -13,8 +13,6 @@
 #include "Structures.h"
 
 using MatchMatrix = std::vector<std::vector<Matching>>;
-using Map2D3D = std::map<int,Point3D2DMatch>;
-using Images2D3DMatches = std::map<int,Point3D2DMatch>;
 
 class StructFromMotion{ 
 
@@ -25,7 +23,9 @@ class StructFromMotion{
   std::vector<Matching>                   nFeaturesMatches;
   std::vector<std::vector<Matching>>      nFeatureMatchMatrix;
   std::vector<Point3D>                    nReconstructionCloud;
+  std::vector<Point3D>                    nReconstructionCloud2;
   std::vector<std::string>                nImagesPath; 
+  std::vector<MatchesforSort>             nMatchesSorted;
   std::set<int>                           nDoneViews;
   std::set<int>                           nGoodViews;  
   CameraData                              matrixK;
@@ -55,7 +55,6 @@ class StructFromMotion{
     matcherFlan = cv::DescriptorMatcher::create("BruteForce-Hamming");
     NN_MATCH_RATIO = 0.8f;
 
-
   }
 
   //===============================================
@@ -81,7 +80,7 @@ class StructFromMotion{
   void matchFeatures();
   cv::Mat imageMatching(const cv::Mat& img1,const Keypoints& keypoints1,
                         const cv::Mat& img2,const Keypoints& keypoints2,const Matching& matches);
-  void matchingImShow(cv::Mat& matchImage);
+  void imShow(const cv::Mat& matchImage,const std::string& str);
 
 
 
@@ -98,33 +97,10 @@ class StructFromMotion{
   void getCameraMatrix(CameraData& intrinsics);
 
   //===============================================
-  //ESSENTIAL MATRIX
-  //===============================================
-
-
-
-  //===============================================
-  //ROTATION AND TRASLATION MATRIX[R|t]
-  //===============================================
-
-
-
-  //===============================================
-  //PROJECTION MATRIX
-  //===============================================
-
-
-
-
-  //===============================================
   //FUNCTION CHECK ROTATION MATRIX (Must be det=1)
   //===============================================
 
-  bool CheckCoherentRotation(cv::Mat& R);
-
-  int findHomographyInliers(const Features& f1,const Features& f2,const Matching& matches);
-
-  std::map<float,ImagePair> best2Views();
+  bool CheckCoherentRotation(cv::Mat& R); 
 
   //===============================================
   //FUNCTION ALIGNED POINTS
@@ -141,31 +117,39 @@ class StructFromMotion{
   //FUNCTION CORRESPONDENCES 2D-3D
   //===============================================
 
-  bool map2D3D(const Features& left,const Features& right,const cv::Matx34f& P1,
+  bool triangulateViews(const Features& left,const Features& right,const cv::Matx34f& P1,
                const cv::Matx34f& P2,const Matching& matches,const CameraData& matrixK,
-               const ImagePair imagePair,std::vector<Point3D>& pointcloud);
+               const ImagePair& imagePair,std::vector<Point3D>& pointcloud);
 
   bool baseTriangulation();
 
   //===============================================
   //POINTCLOUD VISUALIZER
   //===============================================
-  void visualizerPointCloud(const std::vector<Point3D>& pointcloud);
+  void visualizerPointCloud(const std::vector<Point3D>& pointcloud,const std::vector<Point3D>& pointcloud2);
 
   //===============================================
   //INVERSE MATRIX-DETERMINANT FUNCTION EIGEN
   //===============================================
 
   cv::Mat inverse(cv::Mat& matrix);
+
   double determinante(cv::Mat& relativeRotationCam);
+
+  int findHomographyInliers(const Features& f1,const Features& f2,const Matching& matches);
 
   void addMoreViews();
 
-  Images2D3DMatches find2D3DMatches();
 
-  void findCameraPosePNP(const CameraData& matrixK,const Point3D2DMatch& match,cv::Matx34f& cameraPose);
+  void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
 
   void mergeNewPointCloud(const std::vector<Point3D>& cloud);
+
+  size_t find2D3DMatches(const size_t& newFrame);
+
+  ImagePair findBestPair();
+
+
 
 };//Fin class
 

@@ -14,13 +14,11 @@ using Matching = std::vector<cv::DMatch>;
 using Points2f = std::vector<cv::Point2f>;
 using Points3f = std::vector<cv::Point3f>;
 
-
 struct Features {
 
     Keypoints	kps;
     Points2f	pt2D;
     cv::Mat	descriptors;
-
 
 };
 
@@ -39,7 +37,8 @@ struct CameraData{
 struct Point3D {
 
     cv::Point3f pt;
-    std::map<int,int> pt3D2D;
+    int idxImgLeft;
+    int idxImgRight;
 
 };
 
@@ -49,10 +48,25 @@ struct ImagePair{
 
 };
 
-struct Point3D2DMatch{
+struct Pts3D2DPNP{
 
   Points2f pts2D;
   Points3f pts3D;
+
+};
+
+struct Image3D2DMatch{
+
+  Pts3D2DPNP pts;
+  size_t     left;
+  size_t     right;
+};
+
+struct MatchesforSort{
+
+  int size;
+  size_t i;
+  size_t j;
 
 };
 
