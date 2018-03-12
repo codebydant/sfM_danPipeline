@@ -83,7 +83,7 @@ link_directories(${OpenCV_LIB_DIR})
 # VARIABLES
 ##############################################################################
 set(SFM_HEADER "include/Sfm.h")
-set(SOURCE "main.cpp" "src/Sfm.cpp" "src/Structures.cpp")
+set(SOURCE "main.cpp" "src/Sfm.cpp" )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 FILE(GLOB_RECURSE HEADER_FILES include *.h )
@@ -95,7 +95,7 @@ add_custom_target(headers SOURCES ${HEADER_FILES} ${SOURCES_FILES})
 # DATA
 ##############################################################################
 
-configure_file("data/temple" ${CMAKE_CURRENT_BINARY_DIR}/bin/ COPYONLY)
+configure_file("data/temple/temple0001.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/camera-calibration-data.xml" ${CMAKE_CURRENT_BINARY_DIR}/bin/camera-calibration-data.xml COPYONLY)
 
 ##############################################################################
