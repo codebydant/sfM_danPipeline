@@ -40,9 +40,8 @@ struct CameraData{
 
 struct Point3D {
 
-    cv::Point3f pt;
-    int idxImgLeft;
-    int idxImgRight;
+    cv::Point3f pt;    
+    std::map<int,int> idxImage;
 
 };
 
