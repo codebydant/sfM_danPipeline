@@ -145,7 +145,7 @@ class StructFromMotion{
 
   void mergeNewPointCloud(const std::vector<Point3D>& cloud);
 
-  size_t find2D3DMatches(const size_t& newFrame);
+  Pts3D2DPNP find2D3DMatches(const size_t& newFrame,size_t& bestFrame);
 
   ImagePair findBestPair();
 
