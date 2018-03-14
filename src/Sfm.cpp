@@ -585,29 +585,32 @@ bool StructFromMotion::triangulateViews(const Features& left,const Features& rig
 void StructFromMotion::addMoreViews(){
 
 
-  for(size_t newFrame = 0;newFrame < nImages.size();newFrame++){
 
-    const size_t status = nDoneViews.count(newFrame);
+  for(size_t numFrame=0;numFrame<nImages.size();numFrame++){
 
-    if(status==1){
+    const size_t status = nDoneViews.count(numFrame);
+
+    if(status==0){
 
        continue;
-    }
+    }    
 
     std::cout <<"\n"<< "===================================="<< std::endl;
     std::cout << "Adding more views..." << std::endl;
     std::cout << "Finding 2D-3D correspondences..." << std::endl;
     size_t bestFrame;
-    Pts3D2DPNP pts2D3D = StructFromMotion::find2D3DMatches(newFrame,bestFrame);
+    Pts3D2DPNP pts2D3D = StructFromMotion::find2D3DMatches(numFrame,bestFrame);
 
-    if(pts2D3D.pts2D.empty() or pts2D3D.pts3D.empty()){
+    if(pts2D3D.pts2D.empty()){
        continue;
+      }else if(pts2D3D.pts2D.size()< 30){
+        continue;
       }
 
-    std::cout << "Match 3D-2D ==> image:" << bestFrame << " and image:" << newFrame << std::endl;
+    std::cout << "Match 3D-2D ==> image:" << numFrame << " and image:" << bestFrame << std::endl;
 
-    nDoneViews.insert(newFrame);
-    std::cout << "Add frame:("<< newFrame << ")"<< std::endl;
+    nDoneViews.insert(bestFrame);
+    std::cout << "Add frame:("<< bestFrame << ")"<< std::endl;
 
     Points2f pts2D_PNP=pts2D3D.pts2D;
     Points3f pts3D_PNP=pts2D3D.pts3D;
@@ -616,15 +619,21 @@ void StructFromMotion::addMoreViews(){
     StructFromMotion::findCameraPosePNP(matrixK,pts3D_PNP,pts2D_PNP,newCameraPose);
     std::cout << "New camera pose:"<< "\n" << newCameraPose << std::endl;
 
-    nCameraPoses[newFrame]=newCameraPose;
+    nCameraPoses[bestFrame]=newCameraPose;
 
     std::vector<Point3D> pointcloud;
-    ImagePair pair = {bestFrame,newFrame};
+    ImagePair pair = {numFrame,bestFrame};
     std::cout << "Triangulating points..." << std::endl;
 
-    bool success = StructFromMotion::triangulateViews(nFeaturesImages[bestFrame],nFeaturesImages[newFrame],
-                                   nCameraPoses[bestFrame],nCameraPoses[newFrame],
-                                   nFeatureMatchMatrix[bestFrame][newFrame],
+    if(numFrame>bestFrame){
+        size_t temp=numFrame;
+        numFrame = bestFrame;
+        bestFrame = temp;
+      }
+
+    bool success = StructFromMotion::triangulateViews(nFeaturesImages[numFrame],nFeaturesImages[bestFrame],
+                                   nCameraPoses[numFrame],nCameraPoses[bestFrame],
+                                   nFeatureMatchMatrix[numFrame][bestFrame],
                                    matrixK,pair,pointcloud);
 
     std::cout << "New pointcloud ==> OK" << std::endl;
@@ -633,9 +642,9 @@ void StructFromMotion::addMoreViews(){
 
        nReconstructionCloud.push_back(pointcloud[i]);
     }
-  }
 
 
+}
 
   std::cout << "\n"<< "=============================== " << std::endl;
   std::cout << "Images processed = " << nDoneViews.size() << " of " << nImages.size() << std::endl;
@@ -646,39 +655,34 @@ void StructFromMotion::addMoreViews(){
 //FUNCTION: FIND CORRESPONDENCES 2D-3D
 //===============================================
 
-Pts3D2DPNP StructFromMotion::find2D3DMatches(const size_t& newFrame,size_t& bestFrame){
+Pts3D2DPNP StructFromMotion::find2D3DMatches(const size_t& numFrame,size_t& bestFrame){
 
   const size_t numImg = nImages.size();
   std::map<int,ImagePair> matcheIdx;
 
-  for(size_t frameN=0;frameN<numImg;frameN++){
+  for(size_t newFrame=0;newFrame<numImg;newFrame++){
 
-      const size_t status = nDoneViews.count(frameN);
-
-      if(status==0){
+      if(nDoneViews.count(newFrame)==1){
 
           continue;
        }
 
-      else{
-
-          if(frameN>newFrame){
-              const size_t bestSizeMatches = nFeatureMatchMatrix[newFrame][frameN].size();
+      if(numFrame>newFrame){
+              const size_t bestSizeMatches = nFeatureMatchMatrix[newFrame][numFrame].size();
               ImagePair pair;
-              pair.left = frameN;
+              pair.left = numFrame;
               pair.right = newFrame;
               matcheIdx[bestSizeMatches]=pair;
             }else{
 
-          const size_t bestSizeMatches = nFeatureMatchMatrix[frameN][newFrame].size();
+          const size_t bestSizeMatches = nFeatureMatchMatrix[numFrame][newFrame].size();
           ImagePair pair;
-          pair.left = frameN;
+          pair.left = numFrame;
           pair.right = newFrame;
           matcheIdx[bestSizeMatches]=pair;
 
           continue;
             }
-       }
    }
 
   Pts3D2DPNP matches2D3D;
@@ -690,9 +694,28 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(const size_t& newFrame,size_t& best
 
   std::map<int,ImagePair>::const_iterator pos = std::prev(matcheIdx.end());
   std::cout<<"found "<<pos->first <<" 3d-2d point correspondences"<<std::endl;
-  bestFrame = pos->second.left;
+  bestFrame = pos->second.right;
 
-  const Matching match = nFeatureMatchMatrix[bestFrame][newFrame];
+  Matching match;
+
+  if(numFrame>bestFrame){
+
+   match= nFeatureMatchMatrix[bestFrame][numFrame];
+    }else{
+      match =nFeatureMatchMatrix[numFrame][bestFrame];
+    }
+/*
+  if(bestFrame>newFrame){
+   for(size_t i=0;i<match.size(); i++){
+
+       cv::DMatch dmatch = match[i];
+       std::swap(dmatch.queryIdx,dmatch.trainIdx);
+       match[i]=dmatch;
+
+     }
+    }
+    */
+
   std::set<int> nDonePts;
 
   for(size_t i=0;i<match.size();i++){
@@ -706,24 +729,39 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(const size_t& newFrame,size_t& best
 
         cv::DMatch  idxFrame = match[i];
         Point3D pt = nReconstructionCloud[idxPC];
-        const size_t status = pt.idxImage.count(bestFrame);
+        const size_t status = pt.idxImage.count(numFrame);
 
         int matched2DPointInNewView = -1;
 
         if(status==0){
             continue;
           }
-         cv::Point2f pt1= nFeaturesImages[bestFrame].pt2D[idxFrame.queryIdx];
-         cv::Point2f pt2= nFeaturesImages[bestFrame].pt2D[pt.idxImage[bestFrame]];
 
-        if(pt1 != pt2 ){
-           continue;
+        if(numFrame>bestFrame){
+            cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.trainIdx];
+            cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
+
+            if(pt1 != pt2 ){
+               continue;
+              }
+
+            matched2DPointInNewView = idxFrame.queryIdx;
+
+          }else{
+         cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.queryIdx];
+         cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
+
+         if(pt1 != pt2 ){
+            continue;
+           }
+
+         matched2DPointInNewView = idxFrame.trainIdx;
           }
 
-        matched2DPointInNewView = idxFrame.trainIdx;
+
 
         matches2D3D.pts3D.push_back(pt.pt);
-        matches2D3D.pts2D.push_back(nFeaturesImages[newFrame].pt2D[matched2DPointInNewView]);
+        matches2D3D.pts2D.push_back(nFeaturesImages[bestFrame].pt2D[matched2DPointInNewView]);
         nDonePts.insert(idxPC);
         break;
      }
