@@ -10,7 +10,8 @@
 #include <map>
 #include <set>
 #include <eigen3/Eigen/Dense>
-#include "Structures.h"
+#include "BundleAdjustment.h"
+//#include "Structures.h"
 
 using MatchMatrix = std::vector<std::vector<Matching>>;
 
@@ -27,7 +28,6 @@ class StructFromMotion{
   std::vector<std::string>                nImagesPath; 
   std::vector<MatchesforSort>             nMatchesSorted;
   std::set<int>                           nDoneViews;
-  std::set<int>                           nGoodViews;  
   CameraData                              matrixK;
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
@@ -150,6 +150,10 @@ class StructFromMotion{
   ImagePair findBestPair();
 
   ImagePair findBestView2ADD(const size_t& numFrame);
+
+  void mergeNewPoints(const std::vector<Point3D>& cloud);
+
+  void adjustCurrentBundle();
 
 
 
