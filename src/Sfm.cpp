@@ -4,6 +4,7 @@
 
 #include "../include/Sfm.h"
 
+
 /********************************************
                   PIPELINE
 ********************************************/
@@ -26,6 +27,11 @@ int StructFromMotion::run_SFM(std::ifstream& file){
 
   // **(2) FEATURE MATCHING
   StructFromMotion::matchFeatures();
+/*
+  cv::Mat out;
+  out = StructFromMotion::imageMatching(nImages[0],nFeaturesImages[0].kps,nImages[1],nFeaturesImages[1].kps,nFeatureMatchMatrix[0][1]);
+  StructFromMotion::imShow(out,"matching");
+  */
 
   // **(3) BASE LINE TRIANGULATION
   bool success = StructFromMotion::baseTriangulation();
@@ -356,7 +362,7 @@ bool StructFromMotion::baseTriangulation(){
 
   std::cout << "Getting best two views for first reconstruction..." << std::endl;
   ImagePair pair = findBestPair();
-  pair={18,19};
+  //ImagePair pair={18,19};
 
   Features alignedLeft,alignedRight;
   StructFromMotion::AlignedPointsFromMatch(nFeaturesImages[pair.left],
@@ -385,7 +391,7 @@ bool StructFromMotion::baseTriangulation(){
                                                   nImages[pair.right],nFeaturesImages[pair.right].kps,
                                                   bestMatches);
 
-//  StructFromMotion::imShow(outImg,"Matching");
+ // StructFromMotion::imShow(outImg,"Matching");
   std::cout << "Getting camera pose..." << std::endl;
 
   // CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
@@ -430,6 +436,8 @@ bool StructFromMotion::baseTriangulation(){
 
       nDoneViews.insert(pair.left);
       nDoneViews.insert(pair.right);
+
+   //   adjustCurrentBundle() ;
       return true;
 
   }else{
@@ -611,25 +619,35 @@ void StructFromMotion::addMoreViews(){
    // ImagePair pair = {numFrame,bestFrame};
     std::cout << "Triangulating points..." << std::endl;
 
-    Features alignedL,alignedR;
+    size_t left,right;
     Matching match;
 
-    if(numFrame>bestFrame){        
-        match = nFeatureMatchMatrix[bestFrame][numFrame];
-        for(size_t i=0;i<match.size(); i++){
-            cv::DMatch dmatch = match[i];
-            std::swap(dmatch.queryIdx,dmatch.trainIdx);
-            match[i]=dmatch;
+    if(numFrame>bestFrame){
+        size_t left =bestFrame;
+        size_t right = numFrame;
+      //  pair = {left,right};
+        match = nFeatureMatchMatrix[left][right];
+        for(size_t i=0;i<match.size();i++){
+            cv::DMatch mat = match[i];
+            std::swap(mat.queryIdx,mat.trainIdx);
+            match[i]=mat;
           }
+        //std::swap (numFrame,bestFrame);
       }else{
-        match = nFeatureMatchMatrix[numFrame][bestFrame];
+        size_t left = numFrame;
+        size_t right = bestFrame;
+     //   pair={left,right};
+        match = nFeatureMatchMatrix[left][right];
       }
-
-    StructFromMotion::AlignedPointsFromMatch(nFeaturesImages[numFrame],nFeaturesImages[bestFrame],match,alignedL,alignedR);
+    Features alignedLeft,alignedRight;
+    StructFromMotion::AlignedPointsFromMatch(nFeaturesImages[numFrame],
+                                             nFeaturesImages[bestFrame],
+                                             match,
+                                             alignedLeft,alignedRight);
 
     // ESSENTIAL MATRIX
     cv::Mat mask;
-    cv::Mat E = cv::findEssentialMat(alignedL.pt2D, alignedR.pt2D,
+    cv::Mat E = cv::findEssentialMat(alignedLeft.pt2D, alignedRight.pt2D,
                                      matrixK.K,cv::RANSAC,0.999, 1.0,mask);
 
     Matching bestMatches;
@@ -639,6 +657,7 @@ void StructFromMotion::addMoreViews(){
              bestMatches.push_back(match[i]);
            }
       }
+std::cout << "yeah" << std::endl;
 
     bool success = StructFromMotion::triangulateViews(nFeaturesImages[numFrame],nFeaturesImages[bestFrame],
                                    nCameraPoses[numFrame],nCameraPoses[bestFrame],
@@ -646,12 +665,14 @@ void StructFromMotion::addMoreViews(){
                                    matrixK,pair,pointcloud);
 
     std::cout << "New pointcloud ==> OK" << std::endl;
+    //StructFromMotion::mergeNewPoints(pointcloud);
 
     for(size_t i=0;i<pointcloud.size();i++){
 
        nReconstructionCloud.push_back(pointcloud[i]);
     }
 
+    //adjustCurrentBundle() ;
   }
 
   std::cout << "\n"<< "=============================== " << std::endl;
@@ -668,7 +689,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
    Pts3D2DPNP matches2D3D;
 
    //Buscar si el frame N está en la nube de puntos
-   for(size_t const frameN : nDoneViews){
+   for(const size_t frameN : nDoneViews){
 
      //Si es falso, entonces no está el frame en la nube de puntos, no sirve!
     if(nDoneViews.count(frameN)==0){
@@ -697,24 +718,22 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
 
     for(size_t idxPC=0; idxPC<nReconstructionCloud.size();idxPC++){
 
-        const size_t status2 = nDonePts.count(idxPC);
-        if(status2 == 1){
+        if(nDonePts.count(idxPC) == 1){
             continue;
           }
 
-        cv::DMatch  idxFrame = match[i];
+        const cv::DMatch  idxFrame = match[i];
         Point3D pt = nReconstructionCloud[idxPC];
-        const size_t status = pt.idxImage.count(numFrame);
+
+        if(pt.idxImage.count(numFrame)==0){
+            continue;
+          }
 
         int matched2DPointInNewView = -1;
 
-        if(status==0){
-            continue;
-          }
-
         if(numFrame>newFrame){
-            cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.trainIdx];
-            cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
+        const cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.trainIdx];
+        const cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
 
             if(pt1 != pt2 ){
                continue;
@@ -724,8 +743,8 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
 
         }else{
 
-            cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.queryIdx];
-            cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
+          const cv::Point2f pt1= nFeaturesImages[numFrame].pt2D[idxFrame.queryIdx];
+          const cv::Point2f pt2= nFeaturesImages[numFrame].pt2D[pt.idxImage[numFrame]];
 
             if(pt1 != pt2 ){
                continue;
@@ -741,9 +760,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
      }
    }
 
-  if(matches2D3D.pts2D.empty()){
-     continue;
-    }else if(matches2D3D.pts2D.size()< 30){
+   if(matches2D3D.pts2D.size()< 30){
       continue;
     }
  break;
@@ -856,6 +873,84 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
   return det;
 }
 
+void StructFromMotion::adjustCurrentBundle() {
+    adjustBundle(nReconstructionCloud,nCameraPoses,matrixK,nFeaturesImages);
+
+}
+
+
+void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& cloud) {
+    const size_t numImages = nImages.size();
+    std::vector<std::vector<Matching>> mergeMatchMatrix;
+    mergeMatchMatrix.resize(numImages, std::vector<Matching>(numImages));
+
+    size_t newPoints = 0;
+    size_t mergedPoints = 0;
+    const float MERGE_CLOUD_POINT_MIN_MATCH_DISTANCE   = 0.01;
+    const float MERGE_CLOUD_FEATURE_MIN_MATCH_DISTANCE = 20.0;
+
+    for (const Point3D& p : cloud) {
+        const cv::Point3f newPoint = p.pt; //new 3D point
+
+        bool foundAnyMatchingExistingViews = false;
+        bool foundMatching3DPoint = false;
+        for (Point3D& existingPoint : nReconstructionCloud) {
+            if (cv::norm(existingPoint.pt - newPoint) < MERGE_CLOUD_POINT_MIN_MATCH_DISTANCE) {
+                //This point is very close to an existing 3D cloud point
+                foundMatching3DPoint = true;
+
+                //Look for common 2D features to confirm match
+                for (const auto& newKv : p.idxImage) {
+                    //kv.first = new point's originating view
+                    //kv.second = new point's view 2D feature index
+
+                    for (const auto& existingKv : existingPoint.idxImage) {
+                        //existingKv.first = existing point's originating view
+                        //existingKv.second = existing point's view 2D feature index
+
+                        bool foundMatchingFeature = false;
+                        const bool newIsLeft = newKv.first > existingKv.first;
+                        const int leftViewIdx         = (newIsLeft) ? newKv.first  : existingKv.first;
+                        const int leftViewFeatureIdx  = (newIsLeft) ? newKv.second : existingKv.second;
+                        const int rightViewIdx        = (newIsLeft) ? existingKv.first  : newKv.first;
+                        const int rightViewFeatureIdx = (newIsLeft) ? existingKv.second : newKv.second;
+
+                        const Matching& matching = nFeatureMatchMatrix[leftViewIdx][rightViewIdx];
+                        for (const cv::DMatch& match : matching) {
+                            if (match.queryIdx == leftViewFeatureIdx and match.trainIdx == rightViewFeatureIdx
+                                and match.distance < MERGE_CLOUD_FEATURE_MIN_MATCH_DISTANCE) {
+
+                                mergeMatchMatrix[leftViewIdx][rightViewIdx].push_back(match);
+
+                                //Found a 2D feature match for the two 3D points - merge
+                                foundMatchingFeature = true;
+                                break;
+                            }
+                        }
+
+                        if (foundMatchingFeature) {
+                            //Add the new originating view, and feature index
+                            existingPoint.idxImage[newKv.first] = newKv.second;
+
+                            foundAnyMatchingExistingViews = true;
+
+                        }
+                    }
+                }
+            }
+            if (foundAnyMatchingExistingViews) {
+                mergedPoints++;
+                break; //Stop looking for more matching cloud points
+            }
+        }
+
+        if (not foundAnyMatchingExistingViews and not foundMatching3DPoint) {
+            //This point did not match any existing cloud points - add it as new.
+            nReconstructionCloud.push_back(p);
+            newPoints++;
+        }
+   }
+}
 
 
 
