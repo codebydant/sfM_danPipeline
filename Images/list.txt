@@ -28,16 +28,7 @@ temple/temple0027.png
 temple/temple0028.png
 temple/temple0029.png
 temple/temple0030.png
-temple/temple0031.png
-temple/temple0032.png
-temple/temple0033.png
-temple/temple0034.png
-temple/temple0035.png
-temple/temple0036.png
-temple/temple0037.png
-temple/temple0038.png
-temple/temple0039.png
-temple/temple0040.png
+
 
 
 
