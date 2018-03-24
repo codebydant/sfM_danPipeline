@@ -1,58 +1,77 @@
 #include "../include/BundleAdjustment.h"
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
-
 #include <mutex>
+#include <glog/logging.h>
 
 struct SimpleReprojectionError {
-    SimpleReprojectionError(double observed_x, double observed_y) :
-            observed_x(observed_x), observed_y(observed_y) {
-    }
+
+  SimpleReprojectionError(double observed_x, double observed_y) :
+            observed_x(observed_x), observed_y(observed_y) {}
     template<typename T>
-    bool operator()(const T* const camera,
-                                const T* const point,
-                                        const T* const focal,
-                                                  T* residuals) const {
-        T p[3];
-        // Rotate: camera[0,1,2] are the angle-axis rotation.
-        ceres::AngleAxisRotatePoint(camera, point, p);
+  bool operator()(const T* const intrinsics,
+                      const T* const extrinsics,
+                      const T* const point,
+                      T* residules) const
+      {
+          const T& focal_length       = intrinsics[OFFSET_FOCAL_LENGTH];
+          const T& principal_point_x  = intrinsics[OFFSET_PRINCIPAL_POINT_X];
+          const T& principal_point_y  = intrinsics[OFFSET_PRINCIPAL_POINT_Y];
+          const T& k1                 = intrinsics[OFFSET_K1];
+          const T& k2                 = intrinsics[OFFSET_K2];
+          const T& k3                 = intrinsics[OFFSET_K3];
+          const T& p1                 = intrinsics[OFFSET_P1];
+          const T& p2                 = intrinsics[OFFSET_P2];
 
-        // Translate: camera[3,4,5] are the translation.
-        p[0] += camera[3];
-        p[1] += camera[4];
-        p[2] += camera[5];
+          // compute projective coordinates: x = RX + t.
+          // extrinsics[0, 1, 2]: axis-angle
+          // extrinsics[3, 4, 5]: translation
+          T x[3];
+          ceres::AngleAxisRotatePoint(extrinsics, point, x);
+          x[0] += extrinsics[3];
+          x[1] += extrinsics[4];
+          x[2] += extrinsics[5];
 
-        // Perspective divide
-        const T xp = p[0] / p[2];
-        const T yp = p[1] / p[2];
+          // compute normalized coordinates
+          T xn = x[0] / x[2];
+          T yn = x[1] / x[2];
 
-        // Compute final projected point position.
-        const T predicted_x = *focal * xp;
-        const T predicted_y = *focal * yp;
+          T predicted_x, predicted_y;
 
-        // The error is the difference between the predicted and observed position.
-        residuals[0] = predicted_x - T(observed_x);
-        residuals[1] = predicted_y - T(observed_y);
-        return true;
+          // apply distortion to the normalized points to get (xd, yd)
+          // do something for zero distortion
+          apply_radio_distortion_camera_intrinsics(focal_length,
+                                                   focal_length,
+                                                   principal_point_x,
+                                                   principal_point_y,
+                                                   k1, k2, k3,
+                                                   p1, p2,
+                                                   xn, yn,
+                                                   &predicted_x,
+                                                   &predicted_y);
+
+          residules[0] = predicted_x - T(observed_x_);
+          residules[1] = predicted_y - T(observed_y_);
+          return true;
     }
     // Factory to hide the construction of the CostFunction object from
     // the client code.
     static ceres::CostFunction* Create(const double observed_x, const double observed_y) {
-        return (new ceres::AutoDiffCostFunction<SimpleReprojectionError, 2, 6, 3, 1>(
+        return (new ceres::AutoDiffCostFunction<SimpleReprojectionError, 2, 8, 6, 3>(
                 new SimpleReprojectionError(observed_x, observed_y)));
     }
     double observed_x;
     double observed_y;
 };
 
-void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,CameraData&                  intrinsics,const std::vector<Features>& image2dFeatures) {
+void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,CameraData& intrinsics,const std::vector<Features>& image2dFeatures) {
 
     // Create residuals for each observation in the bundle adjustment problem. The
     // parameters for cameras and points are added automatically.
     ceres::Problem problem;
 
     //Convert camera pose parameters from [R|t] (3x4) to [Angle-Axis (3), Translation (3), focal (1)] (1x7)
-    using  CameraVector = cv::Matx<double, 1, 6> ;
+    typedef cv::Matx<double, 1, 6> CameraVector;
     std::vector<CameraVector> cameraPoses6d;
     cameraPoses6d.reserve(cameraPoses.size());
     for (size_t i = 0; i < cameraPoses.size(); i++) {

@@ -22,8 +22,9 @@ int StructFromMotion::run_SFM(std::ifstream& file){
   StructFromMotion::imagesLOAD(file);  
   nCameraPoses.resize(nImages.size());
 
+
   // **(1) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
-  StructFromMotion::extractFeatures();
+ StructFromMotion::extractFeatures();
 
   // **(2) FEATURE MATCHING
   StructFromMotion::matchFeatures();
@@ -31,13 +32,13 @@ int StructFromMotion::run_SFM(std::ifstream& file){
   cv::Mat out;
   out = StructFromMotion::imageMatching(nImages[0],nFeaturesImages[0].kps,nImages[1],nFeaturesImages[1].kps,nFeatureMatchMatrix[0][1]);
   StructFromMotion::imShow(out,"matching");
-  */
+*/
 
   // **(3) BASE LINE TRIANGULATION
   bool success = StructFromMotion::baseTriangulation();
 
   // **(4) ADD MORE VIEWS
-  StructFromMotion::addMoreViews();
+ // StructFromMotion::addMoreViews();
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
@@ -67,11 +68,25 @@ void StructFromMotion::imagesLOAD(std::ifstream& file){
   std::string str;
   while(file >> str){
 
+      int kernel_size = 3;
+      int scale = 1;
+      int delta = 0;
+      int ddepth = CV_16S;
       cv::Mat img   = cv::imread(str,CV_LOAD_IMAGE_COLOR);
       cv::Mat temp = img.clone();
       cv::Mat resize;
       cv::resize(temp,resize,cv::Size(),0.75,0.75);
       cv::GaussianBlur(resize,temp, cv::Size(3,3),0,0);
+      /*
+      cv::Mat src_gray,dst;
+      cv::cvtColor( temp, src_gray, CV_BGR2GRAY );
+
+      cv::Canny(temp, dst, 100, 300, 3);
+      cv::Mat abs_dst;
+      cv::convertScaleAbs( dst, abs_dst );
+      cv::imshow("edges",abs_dst);
+      cv::waitKey(0);
+      */
       nImages.push_back(temp);
       nImagesPath.push_back(str);
     }
@@ -437,7 +452,7 @@ bool StructFromMotion::baseTriangulation(){
       nDoneViews.insert(pair.left);
       nDoneViews.insert(pair.right);
 
-   //   adjustCurrentBundle() ;
+      adjustCurrentBundle() ;
       return true;
 
   }else{
