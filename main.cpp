@@ -3,7 +3,6 @@
 **********************************/
 
 #include "include/Sfm.h"
-//#include "include/Ros_interface.h"
 
 /*********************************
       FUNCION PRINCIPAL-MAIN
