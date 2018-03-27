@@ -21,10 +21,9 @@ class StructFromMotion{
   std::vector<cv::Mat>                    nImages;
   std::vector<cv::Matx34f>                nCameraPoses;
   std::vector<Features>                   nFeaturesImages;
-  std::vector<Matching>                   nFeaturesMatches;
   std::vector<std::vector<Matching>>      nFeatureMatchMatrix;
   std::vector<Point3D>                    nReconstructionCloud;
-  std::vector<Point3D>                    nReconstructionCloud2;
+  std::vector<Point3DRGB>                 nReconstructionCloudRGB;
   std::vector<std::string>                nImagesPath; 
   std::vector<MatchesforSort>             nMatchesSorted;
   std::set<int>                           nDoneViews;
@@ -126,7 +125,7 @@ class StructFromMotion{
   //===============================================
   //POINTCLOUD VISUALIZER
   //===============================================
-  void visualizerPointCloud(const std::vector<Point3D>& pointcloud,const std::vector<Point3D>& pointcloud2);
+  void visualizerPointCloud(const std::vector<Point3D>& pointcloud);
 
   //===============================================
   //INVERSE MATRIX-DETERMINANT FUNCTION EIGEN
@@ -141,17 +140,16 @@ class StructFromMotion{
   void addMoreViews();
 
 
-  void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
-
-  void mergeNewPointCloud(const std::vector<Point3D>& cloud);
+  void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
+                         const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
 
   Pts3D2DPNP find2D3DMatches(ImagePair& pair);
 
   ImagePair findBestPair();
 
-  ImagePair findBestView2ADD(const size_t& numFrame);
-
   void mergeNewPoints(const std::vector<Point3D>& cloud);
+
+  void mergeNewPointCloud(const std::vector<Point3D>& cloud);
 
   void adjustCurrentBundle();
 

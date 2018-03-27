@@ -45,6 +45,12 @@ struct Point3D {
 
 };
 
+struct Point3DRGB{
+
+    Point3D pt;
+    cv::Scalar rgb;
+};
+
 struct ImagePair{
   size_t left;
   size_t right;
