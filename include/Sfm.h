@@ -7,6 +7,7 @@
 #include <string>
 #include <iterator>
 #include <algorithm>
+#include <thread>
 #include <map>
 #include <set>
 #include <eigen3/Eigen/Dense>
