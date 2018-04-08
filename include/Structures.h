@@ -8,6 +8,8 @@
 #include <opencv2/viz.hpp>
 #include <opencv2/viz/vizcore.hpp>
 #include <opencv2/viz/viz3d.hpp>
+#include <ctime>
+#include <thread>
 
 //***********************************************
 //ALIAS
@@ -28,13 +30,13 @@ struct Features {
 
 struct CameraData{
 
-  cv::Mat_<double> K;
-  cv::Mat_<double> invK;
-  cv::Mat_<double> distCoef;
-  double fx;
-  double fy;
-  double cx;
-  double cy;
+  cv::Mat K;
+  cv::Mat invK;
+  cv::Mat distCoef;
+  float fx;
+  float fy;
+  float cx;
+  float cy;
 
 };
 
@@ -42,6 +44,7 @@ struct Point3D {
 
     cv::Point3f pt;    
     std::map<int,int> idxImage;
+    size_t id;
 
 };
 

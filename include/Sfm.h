@@ -7,7 +7,6 @@
 #include <string>
 #include <iterator>
 #include <algorithm>
-#include <thread>
 #include <map>
 #include <set>
 #include <eigen3/Eigen/Dense>
@@ -146,7 +145,7 @@ class StructFromMotion{
 
   Pts3D2DPNP find2D3DMatches(ImagePair& pair);
 
-  ImagePair findBestPair();
+  std::map<int,ImagePair> findBestPair();
 
   void mergeNewPoints(const std::vector<Point3D>& cloud);
 
@@ -154,8 +153,9 @@ class StructFromMotion{
 
   void adjustCurrentBundle();
 
-
-
+  bool getCameraPose(const CameraData& intrinsics,const Matching & matches,
+                     const Features& left, const Features& right, Matching& prunedMatch,
+                     cv::Matx34f& Pleft, cv::Matx34f& Pright);
 };//Fin class
 
 
