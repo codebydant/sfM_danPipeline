@@ -14,6 +14,8 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(Project3DRE_DT VERSION 1.0.0)
 
+set(CMAKE_BUILD_TYPE Release)
+
 MESSAGE("\n" "=========================================")
 MESSAGE(" COMPILING PROJECT  ")
 MESSAGE("=========================================")
@@ -47,7 +49,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 MESSAGE("FINDING DEPENDS...")
 
-find_package(OpenCV 3 REQUIRED PATHS /home/daniel/Programas/opencv-3.2.0)
+find_package(OpenCV 3.2.0 REQUIRED PATHS /home/daniel/Programas/opencv-3.2.0)
 if(OpenCV_FOUND )
     message(STATUS "OpenCV library status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
@@ -161,8 +163,28 @@ MESSAGE("[DONE]")
 
 MESSAGE("---------------------------------------")
 MESSAGE("GENERATING DATA EXAMPLES...")
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/temple/)
 configure_file("data/temple/temple0001.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0002.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0003.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0004.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0005.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0006.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0007.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0008.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0009.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/temple0010.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/temple/list.txt" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 MESSAGE("Generated: " "data/temple/temple0001.png")
+MESSAGE("Generated: " "data/temple/temple0002.png")
+MESSAGE("Generated: " "data/temple/temple0003.png")
+MESSAGE("Generated: " "data/temple/temple0004.png")
+MESSAGE("Generated: " "data/temple/temple0005.png")
+MESSAGE("Generated: " "data/temple/temple0006.png")
+MESSAGE("Generated: " "data/temple/temple0007.png")
+MESSAGE("Generated: " "data/temple/temple0008.png")
+MESSAGE("Generated: " "data/temple/temple0009.png")
+MESSAGE("Generated: " "data/temple/temple0010.png")
 MESSAGE("[DONE]")
 
 ##############################################################################
@@ -171,8 +193,9 @@ MESSAGE("[DONE]")
 
 MESSAGE("---------------------------------------")
 MESSAGE("CREATING EXECUTABLE FILE...")
-add_executable(sfm ${MAIN_SOURCE} include/prueba.h ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE})
-MESSAGE("Created: " sfm)
+set(EXECUTABLE_NAME EM3d)
+add_executable(${EXECUTABLE_NAME} ${MAIN_SOURCE} include/prueba.h ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE})
+MESSAGE("Created: " ${EXECUTABLE_NAME})
 MESSAGE("[DONE]")
 
 ##############################################################################
@@ -184,7 +207,7 @@ MESSAGE("TARGET LIBRARIES...")
 set(OpenCVV_LIBS libopencv_core.so libopencv_features2d.so libopencv_imgproc.so libopencv_viz.so
                  libopencv_highgui.so libopencv_imgcodecs.so libopencv_xfeatures2d.so libopencv_calib3d.so)
 
-target_link_libraries(sfm ${OpenCVV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets)
+target_link_libraries(${EXECUTABLE_NAME} ${OpenCVV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets)
 MESSAGE("Target libraries: " ${OpenCVV_LIBS})
 MESSAGE("Target libraries: " Eigen3)
 MESSAGE("Target libraries: " ${CERES_LIBRARIES})
