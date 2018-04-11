@@ -52,7 +52,7 @@ set(VTK_LIBS_DIR /home/daniel/Programas/VTK-8.1.0/build/lib)
 
 MESSAGE("FINDING DEPENDS...")
 
-find_package(OpenCV 3.2.0 REQUIRED PATHS)
+find_package(OpenCV 3.2.0 REQUIRED)
 if(OpenCV_FOUND )
     message(STATUS "OpenCV library status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
