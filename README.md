@@ -18,30 +18,30 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 
 * OpenCV 3.2.0
 * OpenCV contrib 3.2.0
-* QT Creator 4.8
-* Cmake 10.2
-* Eigen
-* Ceres
+* QT Creator 5.9.1
+* Cmake 3.10.2
+* Eigen 3.3.4
+* Ceres 1.13.0
 * ROS Kinetic
 
 ### Building
 Download the src code: git@github.com:danielTobon43/Proyecto-grado-3D-recons.git
 
-Unpack 3D_recons.zip
+Unpack .zip
 
 mkdir build && cd build
 
-cmake ../src/
+cmake ../
 
 make
 
 ### Test
-cd /3D_recons_build_directory/bin
+cd /_build_directory/bin
 
-./sfm
+./EM3d
 
 ### Nota:
-El fichero CMakeLists.txt sirve para compilar el programa con CMake.
+El fichero CMakeLists.txt sirve para compilar el programa con CMake 3.10.2.
 
 
 
