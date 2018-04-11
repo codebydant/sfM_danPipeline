@@ -2,7 +2,6 @@
 #define VISUALIZER_H
 
 #include <QWidget>
-//#include "ui_Visualizer.h"
 
 namespace Ui {
   class Visualizer;
@@ -15,6 +14,8 @@ class Visualizer : public QWidget
 public:
   explicit Visualizer(QWidget *parent = 0);
   ~Visualizer();
+
+private slots:
 
 
 private:

@@ -11,7 +11,8 @@
 #include <set>
 #include <eigen3/Eigen/Dense>
 #include "BundleAdjustment.h"
-//#include "Structures.h"
+#include "Visualizer.h"
+#include "include/Vtk_visualizer.h"
 
 using MatchMatrix = std::vector<std::vector<Matching>>;
 
