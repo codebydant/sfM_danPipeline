@@ -51,14 +51,20 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QGraphicsView" name="graphicsViewW1">
+   <widget class="QLabel" name="image_lbl">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>10</y>
-      <width>421</width>
-      <height>271</height>
+      <x>0</x>
+      <y>0</y>
+      <width>500</width>
+      <height>300</height>
      </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

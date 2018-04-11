@@ -21,7 +21,13 @@ int StructFromMotion::run_SFM(std::ifstream& file){
   StructFromMotion::imagesLOAD(file);  
   nCameraPoses.resize(nImages.size());
 
+  cv::Mat im1 = nImages[0];
 
+   Visualizer* imageWidget = new Visualizer();
+   imageWidget->Visualizer::showImage(im1);
+   imageWidget->show();
+
+/*
   // **(1) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
   StructFromMotion::extractFeatures();
 
@@ -50,7 +56,7 @@ int StructFromMotion::run_SFM(std::ifstream& file){
 
   // **(5) VISUALIZER POINTCLOUD
   StructFromMotion::visualizerPointCloud(nReconstructionCloud);
-
+*/
 }
 
 /********************************************
