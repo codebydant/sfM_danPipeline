@@ -14,7 +14,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(Project3DRE_DT VERSION 1.0.0)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 MESSAGE("\n" "=========================================")
 MESSAGE(" COMPILING PROJECT  ")
@@ -33,6 +33,9 @@ set(OpenCV_LIBS_DIR /usr/local/lib)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+
+set(VTK_DIR /home/daniel/Programas/VTK-8.1.0)
+set(VTK_LIBS_DIR /home/daniel/Programas/VTK-8.1.0/build/lib)
 
 ##############################################################################
 # ROS-INI
@@ -59,7 +62,7 @@ else()
     message(FATAL_ERROR "    ERROR: OpenCV 3.2.0 not found")
 endif()
 
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND )
     message(STATUS "Eigen library status:")
     message(STATUS "    version: ${Eigen3_VERSION}")
@@ -68,7 +71,7 @@ else()
     message(FATAL_ERROR "    ERROR: Eigen not found")
 endif()
 
-find_package(Ceres REQUIRED)
+find_package(Ceres 1.13.0 REQUIRED)
 if(Ceres_FOUND )
     message(STATUS "Ceres library status:")
     message(STATUS "    version: ${CERES_VERSION}")
@@ -77,14 +80,24 @@ else()
     message(FATAL_ERROR "    ERROR: Ceres not found")
 endif()
 
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Widgets 5 REQUIRED)
 if(Qt5Widgets_FOUND)
-    message(STATUS "Qt5 library status:")
+    message(STATUS "Qt library status:")
     message(STATUS "    version: ${Qt5Widgets_VERSION}")
     message(STATUS "    libraries: ${Qt5Widgets_LIBRARIES}")
     message(STATUS "    include path: ${Qt5Widgets_INCLUDE_DIRS}")
 else()
-    message(FATAL_ERROR "    ERROR: Qt5 not found")
+    message(FATAL_ERROR "    ERROR: Qt not found")
+endif()
+
+find_package(VTK 8 REQUIRED)
+if(VTK_FOUND)
+    message(STATUS "VTK library status:")
+    message(STATUS "    version: ${VTK_VERSION}")
+    message(STATUS "    libraries: ${VTK_LIBRARIES}")
+    message(STATUS "    include path: ${VTK_INCLUDE_DIRS}")
+else()
+    message(FATAL_ERROR "    ERROR: VTK not found")
 endif()
 
 #find_package(catkin REQUIRED COMPONENTS
@@ -95,6 +108,8 @@ endif()
 #)
 
 MESSAGE("[DONE]")
+
+include(${VTK_USE_FILE})
 
 ##############################################################################
 # HEADERS
@@ -115,6 +130,8 @@ MESSAGE("Include: " ${CERES_INCLUDE_DIRS})
 include(CheckFunctionExists)
 INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 MESSAGE("Include: " ${catkin_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
+MESSAGE("Include: " ${VTK_INCLUDE_DIRS})
 MESSAGE("[DONE]")
 # Use the compile definitions defined in the Qt 5 Widgets module
 add_definitions(${Qt5Widgets_DEFINITIONS})
@@ -129,6 +146,8 @@ LINK_DIRECTORIES(${OpenCV_LIBS_DIR})
 MESSAGE("Link: " ${OpenCV_LIBS_DIR})
 LINK_DIRECTORIES(${Qt5Widgets_LIBRARIES})
 MESSAGE("Link: " ${Qt5Widgets_LIBRARIES})
+LINK_DIRECTORIES(${VTK_LIBRARIES})
+MESSAGE("Link: " ${VTK_LIBRARIES})
 MESSAGE("[DONE]")
 
 ##############################################################################
@@ -194,7 +213,8 @@ MESSAGE("[DONE]")
 MESSAGE("---------------------------------------")
 MESSAGE("CREATING EXECUTABLE FILE...")
 set(EXECUTABLE_NAME EM3d)
-add_executable(${EXECUTABLE_NAME} ${MAIN_SOURCE} include/prueba.h ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE})
+add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
+               ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE} include/Vtk_visualizer.h)
 MESSAGE("Created: " ${EXECUTABLE_NAME})
 MESSAGE("[DONE]")
 
@@ -207,7 +227,7 @@ MESSAGE("TARGET LIBRARIES...")
 set(OpenCVV_LIBS libopencv_core.so libopencv_features2d.so libopencv_imgproc.so libopencv_viz.so
                  libopencv_highgui.so libopencv_imgcodecs.so libopencv_xfeatures2d.so libopencv_calib3d.so)
 
-target_link_libraries(${EXECUTABLE_NAME} ${OpenCVV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets)
+target_link_libraries(${EXECUTABLE_NAME} ${OpenCVV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets ${VTK_LIBRARIES})
 MESSAGE("Target libraries: " ${OpenCVV_LIBS})
 MESSAGE("Target libraries: " Eigen3)
 MESSAGE("Target libraries: " ${CERES_LIBRARIES})
