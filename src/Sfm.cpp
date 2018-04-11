@@ -2,8 +2,7 @@
 //HEADERS
 //***********************************************
 
-#include "../include/Sfm.h"
-
+#include "include/Sfm.h"
 
 /********************************************
                   PIPELINE
@@ -29,17 +28,22 @@ int StructFromMotion::run_SFM(std::ifstream& file){
   // **(2) FEATURE MATCHING
   std::cout << "Getting matches from images pairs...";
   StructFromMotion::matchFeatures();
-/*
+
+  for(size_t n=0;n<nImages.size()-1;n++){
+
+
   cv::Mat out;
-  out = StructFromMotion::imageMatching(nImages[0],nFeaturesImages[0].kps,nImages[1],nFeaturesImages[1].kps,nFeatureMatchMatrix[0][1]);
-  StructFromMotion::imShow(out,"matching");
-*/
+  out = StructFromMotion::imageMatching(nImages[n],nFeaturesImages[n].kps,nImages[n+1],nFeaturesImages[n+1].kps,nFeatureMatchMatrix[n][n+1]);
+
+
+ StructFromMotion::imShow(out,"matching");
+}
 
   // **(3) BASE LINE TRIANGULATION
   bool success = StructFromMotion::baseTriangulation();
 
   // **(4) ADD MORE VIEWS
-  StructFromMotion::addMoreViews();
+ StructFromMotion::addMoreViews();
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
@@ -170,7 +174,6 @@ bool compare(const MatchesforSort& matche1, const MatchesforSort& matche2){
 //===============================================
 //FUNCTION: CREATE MATCH MATRIX FROM FEATURES
 //===============================================
-
 void StructFromMotion::matchFeatures(){
 
 
@@ -233,6 +236,7 @@ void StructFromMotion::matchFeatures(){
               << std::endl;
 }
 
+
 //===============================================
 //FUNCTION: IMAGE MATCHING
 //===============================================
@@ -258,7 +262,7 @@ void StructFromMotion::imShow(const cv::Mat& matchImage, const std::string& str)
     cv::moveWindow(str,0,0);
     cv::imshow(str,matchImage);
     cv::waitKey(0);
-  }
+}
 
 //===============================================
 //FUNCTION: GET CAMERA MATRIX
@@ -266,7 +270,7 @@ void StructFromMotion::imShow(const cv::Mat& matchImage, const std::string& str)
 
 void StructFromMotion::getCameraMatrix(CameraData& intrinsics){
 
-    std::cout << "Getting camera matrix...";   
+    std::cout << "Getting camera matrix...";
     intrinsics.K = (cv::Mat_<float>(3,3) << 1520.400000,    0,           302.320000,
                                                   0,    1525.900000,     246.870000,
                                                   0,        0 ,              1);
@@ -274,7 +278,7 @@ void StructFromMotion::getCameraMatrix(CameraData& intrinsics){
     intrinsics.fy = intrinsics.K.at<float>(1,1);
     intrinsics.cx = intrinsics.K.at<float>(0,2);
     intrinsics.cy = intrinsics.K.at<float>(1,2);
-    intrinsics.invK = StructFromMotion::inverse(intrinsics.K);
+    //intrinsics.invK = StructFromMotion::inverse(intrinsics.K);
 
     std::cout << "[DONE]" << std::endl;
     std::cout << "matrix K:" << "\n" << intrinsics.K << std::endl;
@@ -317,6 +321,43 @@ bool StructFromMotion::CheckCoherentRotation(cv::Mat& R){
     }
 }
 
+//==============================================
+//INVERSE MATRIX-DETERMINANT FUNCTION EIGEN
+//==============================================
+
+cv::Mat StructFromMotion::inverse(cv::Mat& matrix){
+
+    Eigen::MatrixXd invMatrix,invMatrixTranspose;
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic,
+                                    Eigen::Dynamic,
+                                    Eigen::RowMajor> > eigenMatrix((double *)matrix.data,3,3);
+
+    invMatrix = eigenMatrix.inverse();
+    invMatrixTranspose = invMatrix.transpose();
+    // create an OpenCV Mat header for the Eigen data:
+    cv::Mat inv(invMatrixTranspose.rows(),
+                                         invMatrixTranspose.cols(),
+                                         CV_64FC1,invMatrixTranspose.data());
+
+    return inv;
+  }
+
+double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
+
+  Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,
+                                  Eigen::Dynamic,
+                                  Eigen::RowMajor> > eigenMatrix((double *)relativeRotationCam.data,3,3);
+
+  Eigen::FullPivLU<Eigen::Matrix<double, Eigen::Dynamic,
+                                         Eigen::Dynamic,
+                                         Eigen::RowMajor>> eigenMatrixV2(eigenMatrix);
+
+  double det = eigenMatrixV2.determinant();
+  return det;
+}
+
+
+
 //===============================================
 //FUNCTION: ALIGNED POINTS
 //===============================================
@@ -347,51 +388,91 @@ void StructFromMotion::AlignedPoints(const Features& left,const Features& right,
       StructFromMotion::keypoints2F(alignedR.kps,alignedR.pt2D);
 }
 
+
 //===============================================
 //FUNCTION: POINTCLOUD VISUALIZER
 //===============================================
 
 void StructFromMotion::visualizerPointCloud(const std::vector<Point3D>& pointcloud){
 
-  // Create a viz window
-  cv::viz::Viz3d visualizer("Viz window");
-  cv::viz::WCoordinateSystem ucs(0.5);
+  int p=8;
 
-  Points3f cloud;
-  for(size_t i=0;i<pointcloud.size();i++){
-      cloud.push_back(pointcloud[i].pt);
+vtkSmartPointer<vtkPolyData> cloud = vtkSmartPointer<vtkPolyData>::New();
+vtkSmartPointer<vtkPoints> pts = vtkSmartPointer<vtkPoints>::New();
+
+for(int n=0;n<nReconstructionCloud.size();n++){
+    cv::Point3f p = nReconstructionCloud[n].pt;
+    pts->InsertNextPoint(p.x,p.y,p.z);
   }
+cloud->SetPoints(pts);
 
-  cv::viz::WCloud point3d(cloud, cv::viz::Color::green());
-  point3d.setRenderingProperty(cv::viz::POINT_SIZE, 1.0);
+vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter =
+    vtkSmartPointer<vtkVertexGlyphFilter>::New();
+  vertexFilter->SetInputData(cloud);
+  vertexFilter->Update();
 
-  std::vector<cv::Affine3f> path;
-  for(size_t i=0;i<nCameraPoses.size();i++){
-    cv::Mat rot = cv::Mat(nCameraPoses[i].get_minor<3,3>(0,0));
-    cv::Mat tra =cv::Mat(nCameraPoses[i].get_minor<3,1>(0,3));
-
-    path.push_back(cv::Affine3f(rot,tra));
-  }
-
-  cv::viz::WTrajectory trajectory(path,cv::viz::WTrajectory::BOTH,0.07,cv::viz::Color::yellow());
-  cv::viz::WTrajectoryFrustums fustrum(path, cv::Matx33f(matrixK.K), 0.2, cv::viz::Color::yellow());
-
-  fustrum.setRenderingProperty(cv::viz::LINE_WIDTH,2);
-  trajectory.setRenderingProperty(cv::viz::REPRESENTATION_WIREFRAME,2);
-
-  visualizer.setBackgroundColor(cv::viz::Color::black());
-  visualizer.showWidget("Coordinate Widget", ucs);
-  visualizer.showWidget("Point3D", point3d); 
-  visualizer.showWidget("trajectory",trajectory);
-  visualizer.showWidget("fus",fustrum);
+  vtkSmartPointer<vtkPolyData> polydata =
+     vtkSmartPointer<vtkPolyData>::New();
+   polydata->ShallowCopy(vertexFilter->GetOutput());
 
 
-  // visualization loop
-  while(cv::waitKey(0) && !visualizer.wasStopped()){
 
-    visualizer.spin();
-  }
+    // Visualize
+vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+
+  //mapper->SetInput(cloud);
+
+  mapper->SetInputData(polydata);
+
+  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+     actor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+     actor->GetProperty()->SetPointSize(1);
+
+
+    vtkSmartPointer<vtkRenderer> renderer =  vtkSmartPointer<vtkRenderer>::New();
+     renderer->AddActor(actor);
+     renderer->SetBackground(0.0, 0.0, 0.0);
+      // Zoom in a little by accessing the camera and invoking its "Zoom" method.
+      renderer->ResetCamera();
+
+
+      // The render window is the actual GUI window
+      // that appears on the computer screen
+      vtkSmartPointer<vtkRenderWindow> renderWindow =
+        vtkSmartPointer<vtkRenderWindow>::New();
+      renderWindow->SetSize(800, 600);
+      renderWindow->AddRenderer(renderer);
+
+      // The render window interactor captures mouse events
+      // and will perform appropriate camera or actor manipulation
+      // depending on the nature of the events.
+      vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+        vtkSmartPointer<vtkRenderWindowInteractor>::New();
+      renderWindowInteractor->SetRenderWindow(renderWindow);
+
+      // This starts the event loop and as a side effect causes an initial render.
+      renderWindowInteractor->Start();
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //===============================================
 //FUNCTION: BASE RECONSTRUCTION
@@ -406,6 +487,7 @@ bool StructFromMotion::baseTriangulation(){
   ImagePair pair = {pos->second.left,pos->second.right};
   std::cout << "[DONE]" << std::endl;
 
+
   std::cout << "best pair:" << " image:(" <<pair.left << ") and image:("<<pair.right <<")" << std::endl;
 
   Matching prunedMatching;
@@ -413,6 +495,10 @@ bool StructFromMotion::baseTriangulation(){
   cv::Matx34f Pright = cv::Matx34f::eye();
 
   std::cout << "Getting camera pose...";
+
+
+    size_t left = pair.right;
+    size_t right = pair.left;
 
   bool success = StructFromMotion::getCameraPose(matrixK,nFeatureMatchMatrix[pair.left][pair.right],
                                                  nFeaturesImages[pair.left], nFeaturesImages[pair.right],
@@ -554,11 +640,11 @@ bool StructFromMotion::triangulateViews(const Features& left,const Features& rig
 
   // CONVERTION CAMERA COORDINATE - WORLD COORDINATE
   std::cout << "Converting points to world coordinate...";
-  cv::Mat pts3d; 
+  cv::Mat pts3d;
   cv::convertPointsFromHomogeneous(pts3dHomogeneous.t(),pts3d);
   std::cout << "[DONE]" << std::endl;
 
-  cv::Mat rvecLeft;  
+  cv::Mat rvecLeft;
   cv::Rodrigues(P1.get_minor<3,3>(0,0),rvecLeft);
   cv::Mat tvecLeft(P1.get_minor<3,1>(0,3).t());
 
@@ -609,13 +695,13 @@ void StructFromMotion::addMoreViews(){
 
   std::cout << "PointCloud size init =" << nReconstructionCloud.size() << std::endl;
 
-  while(nDoneViews.size() != 10){
+  while(nDoneViews.size() != 3){
 
     std::cout <<"\n"<< "===================================="<< std::endl;
     std::cout << "Adding more views..." << std::endl;
     std::cout << "Finding 2D-3D correspondences..." << std::endl;
     ImagePair pair;
-    Pts3D2DPNP pts2D3D = StructFromMotion::find2D3DMatches(pair);    
+    Pts3D2DPNP pts2D3D = StructFromMotion::find2D3DMatches(pair);
 
     size_t numFrame = pair.left;
     size_t bestFrame = pair.right;
@@ -626,15 +712,12 @@ void StructFromMotion::addMoreViews(){
     std::cout << "Add frame:("<< bestFrame << ")"<< std::endl;
 
     Points2f pts2D_PNP=pts2D3D.pts2D;
-    Points3f pts3D_PNP=pts2D3D.pts3D;    
+    Points3f pts3D_PNP=pts2D3D.pts3D;
 
     cv::Matx34f newCameraPose = cv::Matx34f::eye();
     StructFromMotion::findCameraPosePNP(matrixK,pts3D_PNP,pts2D_PNP,newCameraPose);
     std::cout << "Add frame:("<< bestFrame << ")"<< " - New camera pose:"<< "\n"
    << newCameraPose << std::endl;
-
-    newCameraPose(2,3)=0;
-
 
     nCameraPoses[bestFrame]=newCameraPose;
 
@@ -663,17 +746,17 @@ void StructFromMotion::addMoreViews(){
         matchInv = nFeatureMatchMatrix[left][right];
     }
 
-
+/*
     bool success = StructFromMotion::getCameraPose(matrixK,matchInv,
                                                    nFeaturesImages[left], nFeaturesImages[right],
                                                    prunedMatch, Pleft, Pright);
 
-    /*
 
+*/
 
     Features alignedLeft,alignedRight;
-    StructFromMotion::AlignedPointsFromMatch(nFeaturesImages[left],
-                                             nFeaturesImages[right],
+    StructFromMotion::AlignedPointsFromMatch(nFeaturesImages[pair.left],
+                                             nFeaturesImages[pair.right],
                                              matchInv,
                                              alignedLeft,alignedRight);
 
@@ -687,16 +770,16 @@ void StructFromMotion::addMoreViews(){
              prunedMatch.push_back(matchInv[i]);
            }
     }
-    */
-    nFeatureMatchMatrix[left][right]=prunedMatch;
+
+    nFeatureMatchMatrix[pair.left][pair.right]=prunedMatch;
 
     std::vector<Point3D> pointcloud;
     std::cout << "Triangulating points..." << std::endl;
 
-    success = StructFromMotion::triangulateViews(nFeaturesImages[left],nFeaturesImages[right],
-                                   nCameraPoses[left],nCameraPoses[right],
+   bool success = StructFromMotion::triangulateViews(nFeaturesImages[pair.left],nFeaturesImages[pair.right],
+                                   nCameraPoses[pair.left],nCameraPoses[pair.right],
                                    prunedMatch,matrixK,
-                                   {left,right},pointcloud);
+                                   {pair.left,pair.right},pointcloud);
 
     std::cout << "New pointcloud ==> [DONE]" << std::endl;
     StructFromMotion::mergeNewPoints(pointcloud);
@@ -771,7 +854,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
       std::cout << "Finding points 3D of frame pointCloud that match with the new frame..";
       pair={left,right};
 
-      std::set<int> nDonePts;      
+      std::set<int> nDonePts;
       Matching bestMatch;
 
       if(left > right){
@@ -863,40 +946,6 @@ void StructFromMotion::findCameraPosePNP(const CameraData& matrixK,const std::ve
 
 }
 
-//==============================================
-//INVERSE MATRIX-DETERMINANT FUNCTION EIGEN
-//==============================================
-
-cv::Mat StructFromMotion::inverse(cv::Mat& matrix){
-
-    Eigen::MatrixXd invMatrix,invMatrixTranspose;
-    Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,
-                                    Eigen::Dynamic,
-                                    Eigen::RowMajor> > eigenMatrix((double *)matrix.data,3,3);
-
-    invMatrix = eigenMatrix.inverse();
-    invMatrixTranspose = invMatrix.transpose();
-    // create an OpenCV Mat header for the Eigen data:
-    cv::Mat inv(invMatrixTranspose.rows(),
-                                         invMatrixTranspose.cols(),
-                                         CV_64FC1,invMatrixTranspose.data());
-
-    return inv;
-  }
-
-double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
-
-  Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,
-                                  Eigen::Dynamic,
-                                  Eigen::RowMajor> > eigenMatrix((double *)relativeRotationCam.data,3,3);
-
-  Eigen::FullPivLU<Eigen::Matrix<double, Eigen::Dynamic,
-                                         Eigen::Dynamic,
-                                         Eigen::RowMajor>> eigenMatrixV2(eigenMatrix);
-
-  double det = eigenMatrixV2.determinant();
-  return det;
-}
 
 void StructFromMotion::adjustCurrentBundle() {
     //adjustBundle(nReconstructionCloud,nCameraPoses,matrixK,nFeaturesImages);
@@ -1015,10 +1064,10 @@ bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching
 
   // ESSENTIAL MATRIX
   cv::Mat mask;
-  //double focal = matrixK.K.at<float>(0, 0); //Note: assuming fx = fy
-  //cv::Point2d pp(matrixK.K.at<float>(0, 2), matrixK.K.at<float>(1, 2));
+  double focal = matrixK.K.at<float>(0, 0); //Note: assuming fx = fy
+  cv::Point2d pp(matrixK.K.at<float>(0, 2), matrixK.K.at<float>(1, 2));
   cv::Mat E = cv::findEssentialMat(alignedLeft.pt2D, alignedRight.pt2D,
-                                   intrinsics.K,cv::RANSAC,0.999, 1.0,mask);
+                                   focal,pp,cv::RANSAC,0.999, 1.0,mask);
 
   // CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
   cv::Mat R,T;
@@ -1054,6 +1103,8 @@ bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching
 
   return true;
 }
+
+
 
 
 

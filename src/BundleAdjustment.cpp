@@ -1,4 +1,4 @@
-#include "../include/BundleAdjustment.h"
+#include "include/BundleAdjustment.h"
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #include <mutex>
