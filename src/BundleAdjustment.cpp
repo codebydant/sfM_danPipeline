@@ -47,6 +47,8 @@ struct SimpleReprojectionError {
 
 void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,CameraData&                  intrinsics,const std::vector<Features>& image2dFeatures) {
 
+     std::cout << "Bundle adjuster..." << std::flush;
+
     // Create residuals for each observation in the bundle adjustment problem. The
     // parameters for cameras and points are added automatically.
     ceres::Problem problem;
@@ -72,35 +74,34 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
     }
 
     //focal-length factor for optimization
-    double focal = intrinsics.K.at<double>(0, 0);
+        double focal = intrinsics.K.at<float>(0, 0);
 
-    std::vector<cv::Vec3d> points3d(pointCloud.size());
+        std::vector<cv::Vec3d> points3d(pointCloud.size());
 
-    for (int i = 0; i < pointCloud.size(); i++) {
-        const Point3D& p = pointCloud[i];
-        points3d[i] = cv::Vec3d(p.pt.x, p.pt.y, p.pt.z);
+        for (int i = 0; i < pointCloud.size(); i++) {
+            const Point3D& p = pointCloud[i];
+            points3d[i] = cv::Vec3d(p.pt.x, p.pt.y, p.pt.z);
 
-        for (const auto& kv : p.idxImage) {
-            //kv.first  = camera index
-            //kv.second = 2d feature index
-            cv::Point2f p2d = image2dFeatures[kv.first].pt2D[kv.second];
+            for (const auto& kv : p.idxImage) {
+                //kv.first  = camera index
+                //kv.second = 2d feature index
+                cv::Point2f p2d = image2dFeatures[kv.first].pt2D[kv.second];
 
-            //subtract center of projection, since the optimizer doesn't know what it is
-            float cx =intrinsics.K.at<double>(0, 2);
-            float cy= intrinsics.K.at<double>(1, 2);
+                //subtract center of projection, since the optimizer doesn't know what it is
+                p2d.x -= intrinsics.K.at<float>(0, 2);
+                p2d.y -= intrinsics.K.at<float>(1, 2);
 
-            p2d.x =p2d.x- cx ;
-            p2d.y = p2d.y-cy;
+                // Each Residual block takes a point and a camera as input and outputs a 2
+                // dimensional residual. Internally, the cost function stores the observed
+                // image location and compares the reprojection against the observation.
+                ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
 
-
-            // Each Residual block takes a point and a camera as input and outputs a 2
-            // dimensional residual. Internally, the cost function stores the observed
-            // image location and compares the reprojection against the observation.
-            ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
-
-            problem.AddResidualBlock(cost_function,NULL,cameraPoses6d[kv.first].val,
-                                     points3d[i].val,&focal);
-        }
+                problem.AddResidualBlock(cost_function,
+                        NULL /* squared loss */,
+                        cameraPoses6d[kv.first].val,
+                        points3d[i].val,
+                                            &focal);
+            }
     }
 
     // Make Ceres automatically detect the bundle structure. Note that the
@@ -115,7 +116,8 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
     options.logging_type = ceres::LoggingType::SILENT;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    std::cout << summary.BriefReport() << "\n";
+    std::cout << "[DONE]" << std::endl;
+    std::cout << summary.BriefReport() << std::endl;
 
     if (not (summary.termination_type == ceres::CONVERGENCE)) {
         std::cerr << "Bundle adjustment failed." << std::endl;
@@ -123,10 +125,10 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
     }
 
     //update optimized focal
-    intrinsics.fx = focal;
-    intrinsics.fy = focal;
-    intrinsics.K.at<double>(0,0)=focal;
-    intrinsics.K.at<double>(1,1)=focal;
+    //intrinsics.fx = focal;
+    //intrinsics.fy = focal;
+    intrinsics.K.at<float>(0,0)=focal;
+    intrinsics.K.at<float>(1,1)=focal;
 
 
     //Implement the optimized camera poses and 3D points back into the reconstruction
