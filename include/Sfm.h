@@ -22,13 +22,11 @@ class StructFromMotion{
   std::vector<cv::Mat>                    nImages;
   std::vector<cv::Matx34f>                nCameraPoses;
   std::vector<Features>                   nFeaturesImages;
-  std::vector<std::vector<Matching>>      nFeatureMatchMatrix;
   std::vector<Point3D>                    nReconstructionCloud;
   std::vector<Point3DRGB>                 nReconstructionCloudRGB;
   std::vector<std::string>                nImagesPath; 
-  std::vector<MatchesforSort>             nMatchesSorted;
   std::set<int>                           nDoneViews;
-  CameraData                              matrixK;
+  CameraData                              cameraMatrix;
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
   double                                  NN_MATCH_RATIO;
@@ -63,21 +61,20 @@ class StructFromMotion{
 
   int run_SFM( std::ifstream& file);
 
-  void imagesLOAD(std::ifstream& file);
+  bool imagesLOAD(std::ifstream& file);
 
   //===============================================
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
 
-   Features obtenerFeatures(const cv::Mat& image);
-   void extractFeatures();
+   Features getFeatures(const cv::Mat& image);
+   bool extractFeatures();
 
   //===============================================
   //FEATURE MATCHING
   //===============================================
 
-  Matching obtenerMatches(const Features& left,const Features& right);
-  void matchFeatures();
+  Matching getMatching(const Features& left,const Features& right);
   cv::Mat imageMatching(const cv::Mat& img1,const Keypoints& keypoints1,
                         const cv::Mat& img2,const Keypoints& keypoints2,const Matching& matches);
   void imShow(const cv::Mat& matchImage,const std::string& str);
@@ -94,7 +91,7 @@ class StructFromMotion{
   //CAMERA MATRIX
   //===============================================
 
-  void getCameraMatrix(CameraData& intrinsics);
+  bool getCameraMatrix();
 
   //===============================================
   //FUNCTION CHECK ROTATION MATRIX (Must be det=1)
@@ -150,13 +147,13 @@ class StructFromMotion{
 
   void mergeNewPoints(const std::vector<Point3D>& cloud);
 
-  void mergeNewPointCloud(const std::vector<Point3D>& cloud);
-
   void adjustCurrentBundle();
 
   bool getCameraPose(const CameraData& intrinsics,const Matching & matches,
                      const Features& left, const Features& right, Matching& prunedMatch,
                      cv::Matx34f& Pleft, cv::Matx34f& Pright);
+
+  void saveCloudAndCamerasToPLY(const std::string& prefix);
 };//Fin class
 
 

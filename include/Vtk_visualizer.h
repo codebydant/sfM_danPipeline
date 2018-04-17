@@ -7,3 +7,8 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkVertexGlyphFilter.h>
+#include <vtkCamera.h>
+#include <vtkPlanes.h>
+#include <vtkFrustumSource.h>
+#include <vtkAxesActor.h>
+#include <vtkInteractorStyleImage.h>

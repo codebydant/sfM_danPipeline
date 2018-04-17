@@ -2,12 +2,9 @@
 //HEADERS
 //***********************************************
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv.hpp>
+
 #include <opencv2/xfeatures2d.hpp>
-#include <opencv2/viz.hpp>
-#include <opencv2/viz/vizcore.hpp>
-#include <opencv2/viz/viz3d.hpp>
 #include <ctime>
 #include <thread>
 
@@ -74,11 +71,4 @@ struct Image3D2DMatch{
   size_t     right;
 };
 
-struct MatchesforSort{
-
-  int size;
-  size_t i;
-  size_t j;
-
-};
 
