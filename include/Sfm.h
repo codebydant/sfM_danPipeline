@@ -12,9 +12,7 @@
 #include <eigen3/Eigen/Dense>
 #include "BundleAdjustment.h"
 #include "Visualizer.h"
-#include "include/Vtk_visualizer.h"
-
-using MatchMatrix = std::vector<std::vector<Matching>>;
+#include <thread>
 
 class StructFromMotion{ 
 
@@ -30,6 +28,8 @@ class StructFromMotion{
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
   double                                  NN_MATCH_RATIO;
+  cv::viz::Viz3d                          nVisualizer;
+
 
 
   public:
@@ -48,10 +48,11 @@ class StructFromMotion{
     @ BRUTEFORCE_HAMMINGLUT = 5,
     @ BRUTEFORCE_SL2 = 6
     */
-
+    cv::viz::Viz3d container("3D Reconstruction");
     ptrFeature2D = cv::ORB::create(5000.0);
     matcherFlan = cv::DescriptorMatcher::create("BruteForce-Hamming");
     NN_MATCH_RATIO = 0.8f;
+    nVisualizer = container;
 
   }
 
@@ -59,10 +60,11 @@ class StructFromMotion{
   //CARGA DE IMAGENES
   //===============================================
 
-  int run_SFM( std::ifstream& file);
+ void run_SFM( std::ifstream& file);
 
   bool imagesLOAD(std::ifstream& file);
-
+void loadVisualizer();
+void multithreading (std::ifstream& file);
   //===============================================
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
@@ -123,7 +125,7 @@ class StructFromMotion{
   //===============================================
   //POINTCLOUD VISUALIZER
   //===============================================
-  void visualizerPointCloud(const std::vector<Point3D>& pointcloud);
+  void updateVisualizer(const std::vector<Point3D>& pointcloud);
 
   //===============================================
   //INVERSE MATRIX-DETERMINANT FUNCTION EIGEN
