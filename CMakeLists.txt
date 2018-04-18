@@ -186,16 +186,7 @@ configure_file("data/temple/temple0017.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temp
 configure_file("data/temple/temple0018.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0019.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0020.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0021.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0022.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0023.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0024.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0025.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0026.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0027.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0028.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0029.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
-configure_file("data/temple/temple0030.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+
 
 
 configure_file("data/temple/list.txt" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
