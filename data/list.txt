@@ -8,10 +8,16 @@ temple/temple0007.png
 temple/temple0008.png
 temple/temple0009.png
 temple/temple0010.png
-
-
-
-
+temple/temple0011.png
+temple/temple0012.png
+temple/temple0013.png
+temple/temple0014.png
+temple/temple0015.png
+temple/temple0016.png
+temple/temple0017.png
+temple/temple0018.png
+temple/temple0019.png
+temple/temple0020.png
 
 
 
