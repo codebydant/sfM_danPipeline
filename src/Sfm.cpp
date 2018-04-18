@@ -7,8 +7,7 @@
 /********************************************
                   PIPELINE
 ********************************************/
-
-int StructFromMotion::run_SFM(std::ifstream& file){
+void StructFromMotion::run_SFM(std::ifstream& file){
 
   std::cout << "************************************************" << std::endl;
   std::cout << "              3D RECONSTRUCTION                 " << std::endl;
@@ -33,16 +32,62 @@ int StructFromMotion::run_SFM(std::ifstream& file){
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
 
-  StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
-
-  // **(5) VISUALIZER POINTCLOUD
-  StructFromMotion::visualizerPointCloud(nReconstructionCloud);
+ // StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
 
 }
 
 /********************************************
  FUNCTIONS
 ********************************************/
+
+void StructFromMotion::multithreading (std::ifstream& file){
+
+  //std::thread first(&StructFromMotion::loadVisualizer);     // spawn new thread that calls foo()
+  //std::thread second(&StructFromMotion::run_SFM,this,&file,100);  // spawn new thread that calls bar(0)
+   std::thread first([&] {loadVisualizer(); });
+   std::thread second([&] {run_SFM(file); });
+
+
+
+    // synchronize threads:
+    first.join();                // pauses until first finishes
+    second.join();               // pauses until second finishes
+
+
+
+}
+
+void StructFromMotion::loadVisualizer(){
+
+  nVisualizer.setWindowPosition(cv::Point2d(0,0));
+  cv::viz::WCoordinateSystem ucs(0.5);
+
+
+  nVisualizer.setBackgroundColor(cv::viz::Color::black());
+  nVisualizer.showWidget("Coordinate Widget", ucs);
+  nVisualizer.setFullScreen();
+
+  // visualization loop
+  while(!nVisualizer.wasStopped()){
+
+    Points3f cloud;
+    if(nReconstructionCloud.size()<=0){
+        continue;
+      }
+    for(size_t i=0;i<nReconstructionCloud.size();i++){
+        cloud.push_back(nReconstructionCloud[i].pt);
+    }
+    cv::viz::WCloud pts3D(cloud,cv::viz::Color::green());
+   // updatePoints = pts3D;
+    pts3D.setRenderingProperty(cv::viz::POINT_SIZE, 1.0);
+
+    nVisualizer.showWidget("Point3D", pts3D);
+
+    nVisualizer.spinOnce(100,true);
+
+
+  }
+}
 
 //===============================================
 //FUNCTION: IMAGES LOAD
@@ -311,79 +356,32 @@ void StructFromMotion::AlignedPoints(const Features& left,const Features& right,
 //FUNCTION: POINTCLOUD VISUALIZER
 //===============================================
 
-void StructFromMotion::visualizerPointCloud(const std::vector<Point3D>& pointcloud){
+void StructFromMotion::updateVisualizer(const std::vector<Point3D>& pointcloud){
 
-  std::cout << "visualizing pointcloud..." << std::flush;
-  cv::viz::Viz3d visualizer("Viz window");
-  cv::viz::WCoordinateSystem ucs(0.5);
 
-  Points3f cloud;
-  for(size_t i=0;i<pointcloud.size();i++){
-      cloud.push_back(pointcloud[i].pt);
-  }
 
-  cv::viz::WCloud point3d(cloud, cv::viz::Color::green());
-  point3d.setRenderingProperty(cv::viz::POINT_SIZE, 1.0);
+  /*
 
   std::vector<cv::Affine3f> path;
-  for(size_t i=0;i<nCameraPoses.size();i++){
-    cv::Mat rot = cv::Mat(nCameraPoses[i].get_minor<3,3>(0,0));
-    cv::Mat tra =cv::Mat(nCameraPoses[i].get_minor<3,1>(0,3));
+  for(size_t i=0;i<nCameraPoses.size();i++){  
 
-    path.push_back(cv::Affine3f(rot,tra));
+    cv::Mat pose = cv::Mat(nCameraPoses[i]);
+    path.push_back(cv::Affine3f(pose));
   }
 
-  std::vector<cv::Scalar> rgb;
-  cv::Mat rvecRight;
-  cv::Rodrigues(nCameraPoses[5].get_minor<3,3>(0,0),rvecRight);
-  cv::Mat tvecRight(nCameraPoses[5].get_minor<3,1>(0,3));
-
-  Points2f projectedPoints(nFeaturesImages[5].pt2D.size());
-  cv::projectPoints(cloud,rvecRight,tvecRight,cameraMatrix.K,cv::Mat(),projectedPoints);
-  cv::Mat img = nImages[5];
-/*
-  for(size_t i=0;i<cloud.size();i++){
-
-      for(cv::Point2f& pt2D : projectedPoints){
-            for(size_t i=0;i<img.rows;i++){
-                for(size_t j=0;j<img.cols;j++){
-
-                   cv::Point2f imageCoordinate = cv::Point2f(i,j);
-
-                   if(imageCoordinate==pt2D){
-                       rgb.push_back(cv::Scalar(img.at<cv::Vec3b>(i,j)[0],
-                                                img.at<cv::Vec3b>(i,j)[1],
-                                                img.at<cv::Vec3b>(i,j)[2]));
-                       break;
-                     }else{
-                       continue;
-                     }
-
-               }
-          }
-     }
-   }
-   */
   std::cout << "[DONE]"  << std::endl;
-  std::cout << "pointcloud RGB=" << rgb.size() << std::endl;
   cv::viz::WTrajectory trajectory(path,cv::viz::WTrajectory::BOTH,0.07,cv::viz::Color::yellow());
   cv::viz::WTrajectoryFrustums fustrum(path, cv::Matx33f(cameraMatrix.K), 0.2, cv::viz::Color::yellow());
 
   fustrum.setRenderingProperty(cv::viz::LINE_WIDTH,2);
   trajectory.setRenderingProperty(cv::viz::REPRESENTATION_WIREFRAME,2);
 
-  visualizer.setBackgroundColor(cv::viz::Color::black());
-  visualizer.showWidget("Coordinate Widget", ucs);
-  visualizer.showWidget("Point3D", point3d);
-  visualizer.showWidget("trajectory",trajectory);
-  visualizer.showWidget("fus",fustrum);
+
+ // visualizer.showWidget("trajectory",trajectory);
+ // visualizer.showWidget("fus",fustrum);
+*/
 
 
-  // visualization loop
-  while(cv::waitKey(0) && !visualizer.wasStopped()){
-
-    visualizer.spin();
-  }
 }
 
 //===============================================
@@ -450,6 +448,8 @@ bool StructFromMotion::baseTriangulation(){
 
   nDoneViews.insert(leftView);
   nDoneViews.insert(rightView);
+
+  //updateVisualizer(nReconstructionCloud);
 
  // adjustCurrentBundle() ;
   return true;
@@ -606,7 +606,7 @@ bool StructFromMotion::triangulateViews(const Features& left,const Features& rig
 
 void StructFromMotion::addMoreViews(){
 
-  while(nDoneViews.size() != 3){
+  while(nDoneViews.size() != 10){
 
       std::cout <<"\n"<< "===================================="<< std::endl;
       std::cout << "Adding more views..." << std::endl;
@@ -646,10 +646,15 @@ void StructFromMotion::addMoreViews(){
                                                 {leftView,rightView},pointcloud);
 
    std::cout << "[DONE]" << std::endl;
-   StructFromMotion::mergeNewPoints(pointcloud);
+   std::cout << "Adding new pointcloud..." << std::flush;
+  StructFromMotion::mergeNewPoints(pointcloud);
+  std::cout << "[DONE]" << std::endl;
+ //updateVisualizer(nReconstructionCloud);
 
    //adjustCurrentBundle() ;
  }
+
+
 
  std::cout << "\n"<< "=============================== " << std::endl;
  std::cout << "Images processed = " << nDoneViews.size() << " of " << nImages.size() << std::endl;
@@ -712,16 +717,15 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
         for(const cv::DMatch& match_index : bestMatch){
 
           for(Point3D numPt3D : nReconstructionCloud){
-/*
+
              if(nDonePts.count(numPt3D.id) == 1){
                  continue;
-             }
-             */
-/*
+             }             
+
              if(numPt3D.idxImage.count(left)==0){
                 continue;
              }
-             */
+
 
              if(match_index.queryIdx != numPt3D.idxImage[left]){
                 continue;
@@ -735,7 +739,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
          }//End for-(vector point3D comparison)
        }//End for-(best matches vector comparison)
 
-       if(matches2D3D.pts2D.size()< 70){
+       if(matches2D3D.pts2D.size()< 80){
            std::cout << "[X]" << std::endl;
            std::cout << "Not found enough points for PnPRansac, found: "
                      << matches2D3D.pts2D.size() << std::endl;
@@ -789,46 +793,65 @@ void StructFromMotion::adjustCurrentBundle() {
 
 void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud) {
 
-    const float DISTANCE_ERROR = 0.1;
+  const float ERROR_DISTANCE   = 0.01;
 
-    for (const Point3D& pt3D : newPointCloud) {
+      for (const Point3D& p : newPointCloud) {
+          const cv::Point3f newPoint = p.pt; //new 3D point
 
-        bool foundMatchingFeature = false;
-        bool foundMatching3DPoint = false;
-        for (const Point3D& existingPoint3D : nReconstructionCloud) {
-            if (cv::norm(existingPoint3D.pt - pt3D.pt) < DISTANCE_ERROR) {
-                //This point is very close to an existing 3D cloud point
-                foundMatching3DPoint = true;
+          bool foundAnyMatchingExistingViews = false;
+          bool foundMatching3DPoint = false;
+          for (Point3D& existingPoint : nReconstructionCloud) {
+              if (cv::norm(existingPoint.pt - newPoint) < ERROR_DISTANCE) {
+                  //This point is very close to an existing 3D cloud point
+                  foundMatching3DPoint = true;
 
-                //Look for common 2D features to confirm match
-                for (std::pair<const int,int> idxNewPoint3D : pt3D.idxImage) {
-                    //idxNewPoint3D.first = image index --> originating
-                    //idxNewPoint3D.second = feature 2D index
+                  //Look for common 2D features to confirm match
+                  for (const auto& newKv : p.idxImage) {
+                      //kv.first = new point's originating view
+                      //kv.second = new point's view 2D feature index
 
-                    for (std::pair<const int,int> idxExistingPoint3D : existingPoint3D.idxImage) {
-                        //idxExistingPoint3D.first = existing point's originating view
-                        //idxExistingPoint3D.second = existing point's view 2D feature index
-                        if(idxNewPoint3D.first == idxExistingPoint3D.first and
-                           idxNewPoint3D.second==idxExistingPoint3D.second){
+                      for (const auto& existingKv : existingPoint.idxImage) {
+                          //existingKv.first = existing point's originating view
+                          //existingKv.second = existing point's view 2D feature index
 
-                            foundMatchingFeature = true;
-                            break;
-                        }else{
-                            continue;
-                        }
-                    }
-                    if(foundMatchingFeature){
-                        break;
-                    }
-                }
-            }//end if(cv::norm)
-            if (not foundMatchingFeature and not foundMatching3DPoint) {
-                //This point did not match any existing cloud points - add it as new.
-                nReconstructionCloud.push_back(pt3D);
-                break;
-            }
-        }       
+                          bool foundMatchingFeature = false;
+                          const int leftViewIdx  = newKv.first;
+                          const int rightViewIdx = existingKv.first;
+                          const int leftViewFeatureIdx = newKv.second;
+                          const int rightViewFeatureIdx = existingKv.second;
+
+
+                          if (leftViewIdx == rightViewIdx
+                              and leftViewFeatureIdx == rightViewFeatureIdx) {
+
+                                  //Found a 2D feature match for the two 3D points - merge
+                                  foundMatchingFeature = true;
+                                  break;
+
+                          }
+
+                          if (foundMatchingFeature) {
+                              //Add the new originating view, and feature index
+                              existingPoint.idxImage[newKv.first] = newKv.second;
+
+                              foundAnyMatchingExistingViews = true;
+
+                          }
+                      }
+                  }
+              }
+              if (foundAnyMatchingExistingViews) {
+                 break; //Stop looking for more matching cloud points
+              }
+          }
+
+          if (not foundAnyMatchingExistingViews and not foundMatching3DPoint) {
+              //This point did not match any existing cloud points - add it as new.
+              nReconstructionCloud.push_back(p);
+
+          }
    }
+
 }
 
 bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching & matches,
@@ -885,8 +908,8 @@ bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching
 
 void StructFromMotion::saveCloudAndCamerasToPLY(const std::string& prefix) {
 
-     ofstream ofs(prefix + "_points.ply");
-     std::cout << "Saving result reconstruction with prefix..." << prefix + "_points.ply" << std::flush;
+     std::ofstream ofs(prefix + "_points.ply");
+     std::cout << "Saving result reconstruction with prefix..." << prefix + "_points.ply" << std::endl;
 
     //write PLY header
     ofs << "ply                 " << std::endl <<
@@ -918,7 +941,7 @@ void StructFromMotion::saveCloudAndCamerasToPLY(const std::string& prefix) {
 
     ofs.close();
 
-    ofstream ofsc(prefix + "_cameras.ply");
+    std::ofstream ofsc(prefix + "_cameras.ply");
 
     //write PLY header
     ofsc << "ply                 " << std::endl <<
@@ -942,13 +965,11 @@ void StructFromMotion::saveCloudAndCamerasToPLY(const std::string& prefix) {
         cv::Point3d cy = c + cv::Point3d(pose(0, 1), pose(1, 1), pose(2, 1)) * 0.2;
         cv::Point3d cz = c + cv::Point3d(pose(0, 2), pose(1, 2), pose(2, 2)) * 0.2;
 
-        ofsc << c.x  << " " << c.y  << " " << c.z  << endl;
-        ofsc << cx.x << " " << cx.y << " " << cx.z << endl;
-        ofsc << cy.x << " " << cy.y << " " << cy.z << endl;
-        ofsc << cz.x << " " << cz.y << " " << cz.z << endl;
+        ofsc << c.x  << " " << c.y  << " " << c.z  << std::endl;
+        ofsc << cx.x << " " << cx.y << " " << cx.z << std::endl;
+        ofsc << cy.x << " " << cy.y << " " << cy.z << std::endl;
+        ofsc << cz.x << " " << cz.y << " " << cz.z << std::endl;
     }
-
-    const int camVertexStartIndex = nReconstructionCloud.size();
 
     for (size_t i = 0; i < nCameraPoses.size(); i++) {
         ofsc << (i * 4 + 0) << " " <<
@@ -960,8 +981,7 @@ void StructFromMotion::saveCloudAndCamerasToPLY(const std::string& prefix) {
         ofsc << (i * 4 + 0) << " " <<
                 (i * 4 + 3) << " " <<
                 "0 0 255" << std::endl;
-    }
-    std::cout << "[DONE]" << std::endl;
+    }  
 }
 
 
