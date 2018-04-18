@@ -12,17 +12,17 @@
 
 int main(int argc, char **argv ){
 
-  QApplication container(argc, argv);
+  //QApplication container(argc, argv);
   //Visualizer window;
 
   std::ifstream file("temple/list.txt");
-  StructFromMotion sf;
-  int success = sf.run_SFM(file);
- // window.show();
+  StructFromMotion sf; 
+  sf.multithreading(file);
 
 
 
-  return container.exec();
+
+  return 0;
 
   //return 0;
 
