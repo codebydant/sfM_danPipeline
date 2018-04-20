@@ -15,6 +15,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(Project3DRE_DT VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
+
 MESSAGE("\n" "=========================================")
 MESSAGE(" COMPILING PROJECT  ")
 MESSAGE("=========================================")
@@ -27,15 +28,13 @@ set(CMAKE_AUTORCC ON)
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(OpenCV_DIR /home/daniel/Programas/opencv-3.4.1/build)
-set(OpenCV_INCLUDE_DIR /home/daniel/Programas/opencv-3.4.1/include/opencv)
-set(OpenCV_INCLUDE_DIR2 /home/daniel/Programas/opencv-3.4.1/include/opencv2)
-set(OpenCV_LIBS_DIR /home/daniel/Programas/opencv-3.4.1/build/lib)
+set(PCL_DIR /home/daniel/Programas/pcl-master/build)
+set(EIGEN3_DIR /home/daniel/Programas/eigen-3.3.4/build)
+set(Qt_DIR /home/daniel/Programas/QT-5.9.1)
+set(VTK_DIR /home/daniel/Programas/VTK-8.1.0/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-
-set(VTK_DIR /home/daniel/Programas/VTK-8.1.0)
-set(VTK_LIBS_DIR /home/daniel/Programas/VTK-8.1.0/build/lib)
 
 ##############################################################################
 # ROS-INI
@@ -56,48 +55,40 @@ find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR})
 if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
-    #message(STATUS "    libraries: ${OpenCV_LIBS}")
-    message(STATUS "    include path: ${OpenCV_INCLUDE_DIR} ${OpenCV_INCLUDE_DIR2}")
 else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
 endif()
 
-find_package(Eigen3 3.3 REQUIRED)
+find_package(Eigen3 3.3.4 REQUIRED PATHS ${EIGEN3_DIR} NO_MODULE)
 if(Eigen3_FOUND )
-    message(STATUS "Eigen library status:")
+    message(STATUS "Eigen3 library status:")
     message(STATUS "    version: ${Eigen3_VERSION}")
-    message(STATUS "    include path: ${EIGEN3_INCLUDE_DIR}")
 else()
-    message(FATAL_ERROR "    ERROR: Eigen not found")
+    message(FATAL_ERROR "    ERROR: Eigen3 not found")
 endif()
 
 find_package(Ceres 1.13.0 REQUIRED)
 if(Ceres_FOUND )
     message(STATUS "Ceres library status:")
     message(STATUS "    version: ${CERES_VERSION}")
-    message(STATUS "    include path: ${CERES_INCLUDE_DIR}")
 else()
     message(FATAL_ERROR "    ERROR: Ceres not found")
 endif()
 
-find_package(Qt5Widgets 5 REQUIRED)
+find_package(Qt5Widgets 5.9.1 REQUIRED)
 if(Qt5Widgets_FOUND)
     message(STATUS "Qt library status:")
     message(STATUS "    version: ${Qt5Widgets_VERSION}")
-   #message(STATUS "    libraries: ${Qt5Widgets_LIBRARIES}")
-    message(STATUS "    include path: ${Qt5Widgets_INCLUDE_DIRS}")
 else()
     message(FATAL_ERROR "    ERROR: Qt not found")
 endif()
 
-find_package(VTK 8 REQUIRED)
-if(VTK_FOUND)
-    message(STATUS "VTK library status:")
-    message(STATUS "    version: ${VTK_VERSION}")
-   #message(STATUS "    libraries: ${VTK_LIBRARIES}")
-    message(STATUS "    include path: ${VTK_INCLUDE_DIRS}")
+find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS common io segmentation visualization)
+if(PCL_FOUND)
+    message(STATUS "PCL library status:")
+    message(STATUS "    version: ${PCL_VERSION}")
 else()
-    message(FATAL_ERROR "    ERROR: VTK not found")
+    message(FATAL_ERROR "    ERROR: PCL not found")
 endif()
 
 #find_package(catkin REQUIRED COMPONENTS
@@ -107,32 +98,29 @@ endif()
  # sensor_msgs
 #)
 
-
-
 ##############################################################################
 # HEADERS
 ##############################################################################
 
-
-INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIR2})
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
-include(CheckFunctionExists)
-include(${VTK_USE_FILE})
 INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
+include(CheckFunctionExists)
+
 # Use the compile definitions defined in the Qt 5 Widgets module
 add_definitions(${Qt5Widgets_DEFINITIONS})
+add_definitions(${PCL_DEFINITIONS})
 
 ##############################################################################
 # LIBRERIAS
 ##############################################################################
 
-LINK_DIRECTORIES(${OpenCV_LIBS_DIR})
+LINK_DIRECTORIES(${OpenCV_LIBRARIES})
 LINK_DIRECTORIES(${Qt5Widgets_LIBRARIES})
-LINK_DIRECTORIES(${VTK_LIBRARIES})
+LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
 ##############################################################################
 # SOURCE CODE
@@ -187,8 +175,6 @@ configure_file("data/temple/temple0018.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temp
 configure_file("data/temple/temple0019.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0020.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 
-
-
 configure_file("data/temple/list.txt" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 MESSAGE("Generated: " "build/bin/temple/temple0001.png")
 MESSAGE("Generated: " "build/bin/temple/temple0002.png")
@@ -217,7 +203,7 @@ MESSAGE("Generated: " "build/bin/temple/temple0020.png")
 
 set(EXECUTABLE_NAME EM3d)
 add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
-               ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE} include/Vtk_visualizer.h)
+               ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE} include/PCL_visualizer.h)
 
 ##############################################################################
 # TARGET LIBRARIES
@@ -226,11 +212,13 @@ add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
 set(OpenCVV_LIBS libopencv_core.so libopencv_features2d.so libopencv_imgproc.so libopencv_viz.so
                  libopencv_highgui.so libopencv_imgcodecs.so libopencv_xfeatures2d.so libopencv_calib3d.so)
 
-target_link_libraries(${EXECUTABLE_NAME} ${OpenCVV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets ${VTK_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets
+                      ${PCL_LIBRARIES})
 
 #${catkin_LIBRARIES}
 
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
 MESSAGE("=========================================")
+
 

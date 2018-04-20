@@ -5,12 +5,12 @@
 #include "include/Sfm.h"
 #include <QApplication>
 
-
 /*********************************
       FUNCION PRINCIPAL-MAIN
 **********************************/
 
 int main(int argc, char **argv ){
+
 
   //QApplication container(argc, argv);
   //Visualizer window;
@@ -22,8 +22,9 @@ int main(int argc, char **argv ){
 
 
 
-  return 0;
 
-  //return 0;
+
+    return 0;
+
 
 }//end main
