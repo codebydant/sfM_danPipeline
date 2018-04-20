@@ -75,7 +75,7 @@ else()
     message(FATAL_ERROR "    ERROR: Ceres not found")
 endif()
 
-find_package(Qt5Widgets 5.9.1 REQUIRED)
+find_package(Qt5Widgets 5 REQUIRED)
 if(Qt5Widgets_FOUND)
     message(STATUS "Qt library status:")
     message(STATUS "    version: ${Qt5Widgets_VERSION}")
@@ -208,9 +208,6 @@ add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
 ##############################################################################
 # TARGET LIBRARIES
 ##############################################################################
-
-set(OpenCVV_LIBS libopencv_core.so libopencv_features2d.so libopencv_imgproc.so libopencv_viz.so
-                 libopencv_highgui.so libopencv_imgcodecs.so libopencv_xfeatures2d.so libopencv_calib3d.so)
 
 target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets
                       ${PCL_LIBRARIES})
