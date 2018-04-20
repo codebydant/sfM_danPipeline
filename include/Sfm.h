@@ -58,11 +58,11 @@ class StructFromMotion{
   //CARGA DE IMAGENES
   //===============================================
 
- void run_SFM( std::ifstream& file);
+ void pipeLineSFM(std::ifstream& file);
 
   bool imagesLOAD(std::ifstream& file);
 void loadVisualizer();
-void multithreading (std::ifstream& file);
+void run_SFM (std::ifstream& file);
   //===============================================
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
@@ -154,7 +154,7 @@ void multithreading (std::ifstream& file);
                      cv::Matx34f& Pleft, cv::Matx34f& Pright);
 
   void saveCloudAndCamerasToPLY(const std::string& prefix);
-  void saveToPCD();
+  void saveCloudToPCD();
 };//Fin class
 
 
