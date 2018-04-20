@@ -2,9 +2,15 @@
 //HEADERS
 //***********************************************
 
-#include <opencv.hpp>
-//#include "../include/opencv2/xfeatures2d"
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/viz/vizcore.hpp>
+#include <opencv2/viz/viz3d.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <ctime>
 #include <thread>
 

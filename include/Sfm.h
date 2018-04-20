@@ -13,6 +13,7 @@
 #include "BundleAdjustment.h"
 #include "Visualizer.h"
 #include <thread>
+#include "PCL_visualizer.h"
 
 class StructFromMotion{ 
 
@@ -28,8 +29,6 @@ class StructFromMotion{
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
   double                                  NN_MATCH_RATIO;
-  cv::viz::Viz3d                          nVisualizer;
-
 
 
   public:
@@ -47,12 +46,11 @@ class StructFromMotion{
     @ BRUTEFORCE_HAMMING = 4,
     @ BRUTEFORCE_HAMMINGLUT = 5,
     @ BRUTEFORCE_SL2 = 6
-    */
-    cv::viz::Viz3d container("3D Reconstruction");
+    */    
+
     ptrFeature2D = cv::ORB::create(5000.0);
     matcherFlan = cv::DescriptorMatcher::create("BruteForce-Hamming");
     NN_MATCH_RATIO = 0.8f;
-    nVisualizer = container;
 
   }
 
@@ -156,6 +154,7 @@ void multithreading (std::ifstream& file);
                      cv::Matx34f& Pleft, cv::Matx34f& Pright);
 
   void saveCloudAndCamerasToPLY(const std::string& prefix);
+  void saveToPCD();
 };//Fin class
 
 

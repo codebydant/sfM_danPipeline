@@ -1,6 +1,7 @@
 #ifndef VISUALIZER_H
 #define VISUALIZER_H
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc.hpp>
 #include <QWidget>
 
 namespace Ui {
