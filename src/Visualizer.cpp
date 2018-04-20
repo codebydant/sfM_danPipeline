@@ -16,10 +16,10 @@ void Visualizer::showImage(const cv::Mat& image) {
         // Convert the image to the RGB888 format
         switch (image.type()) {
         case CV_8UC1:
-            cvtColor(image, _tmp, CV_GRAY2RGB);
+            cvtColor(image, _tmp,cv::COLOR_GRAY2RGB);
             break;
         case CV_8UC3:
-            cvtColor(image, _tmp, CV_BGR2RGB);
+            cvtColor(image, _tmp, cv::COLOR_BGR2RGB);
             break;
         }
 

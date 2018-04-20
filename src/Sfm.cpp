@@ -33,6 +33,7 @@ void StructFromMotion::run_SFM(std::ifstream& file){
   std::cout << "************************************************" << std::endl;
 
  // StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
+  StructFromMotion::saveToPCD();
 
 }
 
@@ -42,30 +43,65 @@ void StructFromMotion::run_SFM(std::ifstream& file){
 
 void StructFromMotion::multithreading (std::ifstream& file){
 
-  //std::thread first(&StructFromMotion::loadVisualizer);     // spawn new thread that calls foo()
-  //std::thread second(&StructFromMotion::run_SFM,this,&file,100);  // spawn new thread that calls bar(0)
    std::thread first([&] {loadVisualizer(); });
    std::thread second([&] {run_SFM(file); });
 
-
-
-    // synchronize threads:
-    first.join();                // pauses until first finishes
-    second.join();               // pauses until second finishes
-
-
+   // synchronize threads:
+   first.join();                // pauses until first finishes
+   second.join();               // pauses until second finishes
 
 }
 
 void StructFromMotion::loadVisualizer(){
 
+   pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("PCL",true);
+   viewer.addCoordinateSystem (1.0, "cloud", 0);
+   viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
+
+  while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
+
+      viewer.removeAllShapes();
+      viewer.removeAllPointClouds();
+
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());;
+
+      if(nReconstructionCloud.size()<=0){
+          continue;
+        }
+      // Fill in the cloud data
+      cloudPCL->width    = nReconstructionCloud.size();
+      cloudPCL->height   = 1;
+      cloudPCL->is_dense = false;
+      cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
+
+      for (size_t i = 0; i < cloudPCL->points.size (); ++i)
+      {
+        Point3D pt3d = nReconstructionCloud[i];
+        cloudPCL->points[i].x = pt3d.pt.x;
+        cloudPCL->points[i].y = pt3d.pt.y;
+        cloudPCL->points[i].z = pt3d.pt.z;
+      }
+
+     // pcl::io::loadPCDFile ("temple.pcd", *source_cloud);
+
+     // Define R,G,B colors for the point cloud
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 255, 255, 255);
+     // We add the point cloud to the viewer and pass the color handler
+    viewer.addPointCloud (cloudPCL, cloud_color, "original_cloud");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "original_cloud");
+
+    //viewer.resetCamera();
+
+    viewer.spinOnce(100);
+  }
+
+/*
   nVisualizer.setWindowPosition(cv::Point2d(0,0));
   cv::viz::WCoordinateSystem ucs(0.5);
 
-
   nVisualizer.setBackgroundColor(cv::viz::Color::black());
   nVisualizer.showWidget("Coordinate Widget", ucs);
-  nVisualizer.setFullScreen();
+  nVisualizer.setWindowSize(cv::Size(800,600));
 
   // visualization loop
   while(!nVisualizer.wasStopped()){
@@ -84,9 +120,8 @@ void StructFromMotion::loadVisualizer(){
     nVisualizer.showWidget("Point3D", pts3D);
 
     nVisualizer.spinOnce(100,true);
-
-
   }
+  */
 }
 
 //===============================================
@@ -99,14 +134,15 @@ bool StructFromMotion::imagesLOAD(std::ifstream& file){
 
   nImages.clear();
   if (!file.is_open()) {
-         std::cout << "There was a problem opening the file. No images loaded!" << std::endl;
-         return false;
+         std::cerr << "There was a problem opening the file. No images loaded!" << std::endl;
+         std::exit(-1);
+
   }
 
   std::string str;
   while(file >> str){
 
-      cv::Mat img   = cv::imread(str,CV_LOAD_IMAGE_COLOR);
+      cv::Mat img   = cv::imread(str,cv::IMREAD_COLOR);
       cv::Mat temp = img.clone();
       cv::Mat resize;
       cv::resize(temp,resize,cv::Size(),0.75,0.75);
@@ -213,7 +249,7 @@ cv::Mat StructFromMotion::imageMatching(const cv::Mat& img1,const Keypoints& key
 
 void StructFromMotion::imShow(const cv::Mat& matchImage, const std::string& str){
 
-    cv::namedWindow(str,CV_WINDOW_NORMAL);
+    cv::namedWindow(str,cv::WINDOW_NORMAL);
     cv::resizeWindow(str,800,400);
     cv::moveWindow(str,0,0);
     cv::imshow(str,matchImage);
@@ -234,7 +270,7 @@ bool StructFromMotion::getCameraMatrix(){
     cameraMatrix.fy = cameraMatrix.K.at<float>(1,1);
     cameraMatrix.cx = cameraMatrix.K.at<float>(0,2);
     cameraMatrix.cy = cameraMatrix.K.at<float>(1,2);
-    //intrinsics.invK = StructFromMotion::inverse(intrinsics.K);
+    cameraMatrix.invK = StructFromMotion::inverse(cameraMatrix.K);
 
     std::cout << "[DONE]" << std::endl;
     std::cout << "matrix K:" << "\n" << cameraMatrix.K << std::endl;
@@ -260,7 +296,7 @@ bool StructFromMotion::getCameraMatrix(){
      std::cout <<"]" << std::endl;
      */
      if(cameraMatrix.K.empty()){
-         std::cout << "Error: no found or invalid camera calibration file.xml" << std::endl;
+         std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
          std::exit(-1);
      }
      return true;
@@ -349,39 +385,6 @@ void StructFromMotion::AlignedPoints(const Features& left,const Features& right,
 
      // StructFromMotion::keypoints2F(alignedL.kps,alignedL.pt2D);
      // StructFromMotion::keypoints2F(alignedR.kps,alignedR.pt2D);
-}
-
-
-//===============================================
-//FUNCTION: POINTCLOUD VISUALIZER
-//===============================================
-
-void StructFromMotion::updateVisualizer(const std::vector<Point3D>& pointcloud){
-
-
-
-  /*
-
-  std::vector<cv::Affine3f> path;
-  for(size_t i=0;i<nCameraPoses.size();i++){  
-
-    cv::Mat pose = cv::Mat(nCameraPoses[i]);
-    path.push_back(cv::Affine3f(pose));
-  }
-
-  std::cout << "[DONE]"  << std::endl;
-  cv::viz::WTrajectory trajectory(path,cv::viz::WTrajectory::BOTH,0.07,cv::viz::Color::yellow());
-  cv::viz::WTrajectoryFrustums fustrum(path, cv::Matx33f(cameraMatrix.K), 0.2, cv::viz::Color::yellow());
-
-  fustrum.setRenderingProperty(cv::viz::LINE_WIDTH,2);
-  trajectory.setRenderingProperty(cv::viz::REPRESENTATION_WIREFRAME,2);
-
-
- // visualizer.showWidget("trajectory",trajectory);
- // visualizer.showWidget("fus",fustrum);
-*/
-
-
 }
 
 //===============================================
@@ -536,7 +539,7 @@ bool StructFromMotion::triangulateViews(const Features& left,const Features& rig
 
   // NORMALIZE IMAGE COORDINATE TO CAMERA COORDINATE (pixels --> metric)
   std::cout << "Normalizing points..." << std::flush;
-  cv::Mat normalizedLeftPts,normalizedRightPts;
+  cv::Mat normalizedLeftPts,normalizedRightPts; 
   cv::undistortPoints(alignedLeft.pt2D, normalizedLeftPts, matrixK.K, cv::Mat());
   cv::undistortPoints(alignedRight.pt2D, normalizedRightPts, matrixK.K, cv::Mat());
   std::cout << "[DONE]" << std::endl;
@@ -639,6 +642,12 @@ void StructFromMotion::addMoreViews(){
 
       bool success;
       const Matching newMatch = getMatching(nFeaturesImages[leftView],nFeaturesImages[rightView]);
+      Matching prunedMatching;
+      cv::Matx34f Pleft=  cv::Matx34f::eye();
+      cv::Matx34f Pright = cv::Matx34f::eye();
+
+      StructFromMotion::getCameraPose(cameraMatrix,newMatch,nFeaturesImages[leftView],
+                                      nFeaturesImages[rightView],prunedMatching,Pleft,Pright);
 
    success = StructFromMotion::triangulateViews(nFeaturesImages[leftView],nFeaturesImages[rightView],
                                                 nCameraPoses[leftView],nCameraPoses[rightView],
@@ -671,14 +680,12 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
      std::map<int,ImagePair> matchesSizes;
 
      //Buscar si el frame N está en la nube de puntos
-     for(size_t newFrame = 0;newFrame< nImages.size();newFrame++){
+     for(size_t newFrame=0;newFrame<nImages.size();newFrame++){
 
-         std::cout << "Finding best frame to add..." << std::flush;
-        //Si es verdadero, entonces el nuevo frame está en la nube de puntos, no es necesario procesar!
+         std::cout << "Finding best frame to add!" << std::endl;
 
-        if(nDoneViews.count(newFrame)== 1){
-          std::cout << "[X]" << std::endl;
-          std::cout << "Frame:" << newFrame << " is already add." << std::endl;
+        if(nDoneViews.count(newFrame)== 1){          
+          std::cerr << "Frame:" << newFrame << " is already add" << std::endl;
           continue; //Pase al siguiente frame
         }
 
@@ -696,19 +703,18 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
         size_t left = pos->second.left;
         size_t right = pos->second.right;
 
-        std::cout << "[OK]" << std::endl;
         std::cout << "New frame to add: " << right << std::endl;
         std::cout << "Verifying if number of matches is enough..." << std::flush;
 
         if(bestMatchSize < 60){
            matchesSizes.clear();
-           std::cout << "[X]" << std::endl;
+           std::cerr << "[X]" << std::endl;
            continue;
         }
         std::cout << "[OK]" << std::endl;
         std::cout << "Found "<< bestMatchSize << " matches between frame:"
                             << left << " and new frame:" << right << std::endl;
-        std::cout << "Finding 2D points of new frame that match with POINTCLOUD..." << std::flush;
+        std::cout << "Finding 2D points of new frame that match with POINTCLOUD!" << std::endl;
         pair={left,right};
 
         std::set<int> nDonePts;
@@ -740,19 +746,18 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
        }//End for-(best matches vector comparison)
 
        if(matches2D3D.pts2D.size()< 80){
-           std::cout << "[X]" << std::endl;
-           std::cout << "Not found enough points for PnPRansac, found: "
+
+           std::cerr << "Not found enough points for PnPRansac, found: "
                      << matches2D3D.pts2D.size() << std::endl;
            std::cout << "\n"<< "=============================== " << std::endl;
            matchesSizes.clear();
            continue;
-       }else{
+       }
 
-           std::cout << "[OK]" << std::endl;
-           std::cout << "Found: " << matches2D3D.pts2D.size() << " Pt2D and "
+        std::cout << "Found: " << matches2D3D.pts2D.size() << " Pt2D and "
                      << matches2D3D.pts3D.size() << " Pt3D" << std::endl;
          break;
-       }
+
     }//End for-(NewFrames)
 
    return matches2D3D;
@@ -982,6 +987,29 @@ void StructFromMotion::saveCloudAndCamerasToPLY(const std::string& prefix) {
                 (i * 4 + 3) << " " <<
                 "0 0 255" << std::endl;
     }  
+}
+
+void StructFromMotion::saveToPCD(){
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+
+   // Fill in the cloud data
+   cloud.width    = nReconstructionCloud.size();
+   cloud.height   = 1;
+   cloud.is_dense = false;
+   cloud.points.resize(cloud.width * cloud.height);
+
+   for (size_t i = 0; i < cloud.points.size (); ++i)
+   {
+       Point3D pt3d = nReconstructionCloud[i];
+     cloud.points[i].x = pt3d.pt.x;
+     cloud.points[i].y = pt3d.pt.y;
+     cloud.points[i].z = pt3d.pt.z;
+   }
+
+   pcl::io::savePCDFileASCII ("temple.pcd", cloud);
+   std::cout << "Saved " << cloud.points.size () << " data points to temple.pcd." << std::endl;
+
+
 }
 
 
