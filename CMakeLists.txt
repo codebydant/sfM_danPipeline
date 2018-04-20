@@ -30,8 +30,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(OpenCV_DIR /home/daniel/Programas/opencv-3.4.1/build)
 set(PCL_DIR /home/daniel/Programas/pcl-master/build)
 set(EIGEN3_DIR /home/daniel/Programas/eigen-3.3.4/build)
-set(Qt_DIR /home/daniel/Programas/QT-5.9.1)
-set(VTK_DIR /home/daniel/Programas/VTK-8.1.0/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
@@ -51,7 +49,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 MESSAGE("Finding packages...")
 
-find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR})
+find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS core imgproc imgcodecs highgui features2d xfeatures2d)
 if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
@@ -209,8 +207,11 @@ add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
 # TARGET LIBRARIES
 ##############################################################################
 
+set(PCL_LIBRARIES_USED ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES}
+                       ${PCL_SEGMENTATION_LIBRARIES})
+
 target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets
-                      ${PCL_LIBRARIES})
+                      ${PCL_LIBRARIES_USED})
 
 #${catkin_LIBRARIES}
 
