@@ -3,17 +3,17 @@
 //***********************************************
 
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <iterator>
-#include <algorithm>
 #include <map>
 #include <set>
 #include <eigen3/Eigen/Dense>
+#include <thread>
+#include <boost/filesystem.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+
+#include "PCL_visualizer.h"
 #include "BundleAdjustment.h"
 #include "Visualizer.h"
-#include <thread>
-#include "PCL_visualizer.h"
 
 class StructFromMotion{ 
 
@@ -55,20 +55,35 @@ class StructFromMotion{
   }
 
   //===============================================
-  //CARGA DE IMAGENES
+  //MULTITHREADING FUNCTION
   //===============================================
 
- void pipeLineSFM(std::ifstream& file);
+  void run_SFM ();
 
-  bool imagesLOAD(std::ifstream& file);
-void loadVisualizer();
-void run_SFM (std::ifstream& file);
+  //===============================================
+  //PIPELINE
+  //===============================================
+
+  void pipeLineSFM();
+
+  //===============================================
+  //PCL VISUALIZER
+  //===============================================
+
+  void loadVisualizer();
+
+  //===============================================
+  //IMAGES LOAD
+  //===============================================
+
+  bool imagesLOAD(const std::string&  directoryPath);
+
   //===============================================
   //FEATURE DETECTION AND EXTRACTION
   //===============================================
 
-   Features getFeatures(const cv::Mat& image);
-   bool extractFeatures();
+  Features getFeatures(const cv::Mat& image);
+  bool extractFeatures();
 
   //===============================================
   //FEATURE MATCHING
@@ -79,8 +94,6 @@ void run_SFM (std::ifstream& file);
                         const cv::Mat& img2,const Keypoints& keypoints2,const Matching& matches);
   void imShow(const cv::Mat& matchImage,const std::string& str);
 
-
-
   //===============================================
   //CONVERTION KEYPOINTS TO POINTS2D
   //===============================================
@@ -88,10 +101,10 @@ void run_SFM (std::ifstream& file);
   void keypoints2F(Keypoints& keypoints, Points2f& points2D);
 
   //===============================================
-  //CAMERA MATRIX
+  //GET CAMERA MATRIX
   //===============================================
 
-  bool getCameraMatrix();
+  void getCameraMatrix(const std::string str);
 
   //===============================================
   //FUNCTION CHECK ROTATION MATRIX (Must be det=1)
@@ -133,28 +146,71 @@ void run_SFM (std::ifstream& file);
 
   double determinante(cv::Mat& relativeRotationCam);
 
+  //===============================================
+  //FIND HOMOGRAPHY INLIERS
+  //===============================================
+
   int findHomographyInliers(const Features& f1,const Features& f2,const Matching& matches);
 
+  //===============================================
+  //ADD MORE VIEWS FUNCTION
+  //===============================================
+
   void addMoreViews();
+
+  //===============================================
+  //FIND CAMERA POSE WITH PNPRANSAC
+  //===============================================
 
 
   void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
                          const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
 
+  //===============================================
+  //FIND 2D-3D CORRESPONDENCES
+  //===============================================
+
   Pts3D2DPNP find2D3DMatches(ImagePair& pair);
+
+  //===============================================
+  //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
+  //===============================================
 
   std::map<int,ImagePair> findBestPair();
 
+  //===============================================
+  //MERGE NEW POINTCLOUD
+  //===============================================
+
   void mergeNewPoints(const std::vector<Point3D>& cloud);
 
+  //===============================================
+  //BUNDLE ADJUSTMENT ADJUSTER
+  //===============================================
+
   void adjustCurrentBundle();
+
+  //===============================================
+  //FIND CAMERA POSE WITH ESSENTIAL MATRIX
+  //===============================================
 
   bool getCameraPose(const CameraData& intrinsics,const Matching & matches,
                      const Features& left, const Features& right, Matching& prunedMatch,
                      cv::Matx34f& Pleft, cv::Matx34f& Pright);
 
+  //===============================================
+  //SAVE POINTCLOUD TO .PLY OR .PCD
+  //===============================================
+
   void saveCloudAndCamerasToPLY(const std::string& prefix);
   void saveCloudToPCD();
+
+  //===============================================
+  //MESHING POINTCLOUD
+  //===============================================
+
+  void meshingPointCloud();
+
 };//Fin class
 
 

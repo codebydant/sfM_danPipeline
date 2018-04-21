@@ -6,12 +6,9 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
-#include <opencv2/viz/vizcore.hpp>
-#include <opencv2/viz/viz3d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <ctime>
 #include <thread>
 
 //***********************************************
@@ -33,9 +30,11 @@ struct Features {
 
 struct CameraData{
 
-  cv::Mat K;
+  cv::Mat_<float> K;
   cv::Mat invK;
   cv::Mat distCoef;
+  cv::Matx33f K3x3;
+  std::vector<double> distCoefVec;
   float fx;
   float fy;
   float cx;
