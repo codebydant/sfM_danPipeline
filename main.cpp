@@ -14,9 +14,11 @@ int main(int argc, char **argv ){
   //QApplication container(argc, argv);
   //Visualizer window;
 
-  std::ifstream file("temple/list.txt");
-  StructFromMotion sf; 
-  sf.run_SFM(file);
+
+  StructFromMotion sf;   
+  sf.getCameraMatrix("camera-calibration-data.xml");
+  sf.imagesLOAD("temple");
+  sf.run_SFM();
 
   return 0;
 

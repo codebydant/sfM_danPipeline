@@ -30,6 +30,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(OpenCV_DIR /home/daniel/Programas/opencv-3.4.1/build)
 set(PCL_DIR /home/daniel/Programas/pcl-master/build)
 set(EIGEN3_DIR /home/daniel/Programas/eigen-3.3.4/build)
+set(Ceres_DIR /home/daniel/Programas/ceres-1.14.0/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
@@ -65,7 +66,7 @@ else()
     message(FATAL_ERROR "    ERROR: Eigen3 not found")
 endif()
 
-find_package(Ceres 1.13.0 REQUIRED)
+find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR})
 if(Ceres_FOUND )
     message(STATUS "Ceres library status:")
     message(STATUS "    version: ${CERES_VERSION}")
@@ -81,7 +82,7 @@ else()
     message(FATAL_ERROR "    ERROR: Qt not found")
 endif()
 
-find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS common io segmentation visualization)
+find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS common io segmentation visualization surface)
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
     message(STATUS "    version: ${PCL_VERSION}")
@@ -119,6 +120,7 @@ add_definitions(${PCL_DEFINITIONS})
 LINK_DIRECTORIES(${OpenCV_LIBRARIES})
 LINK_DIRECTORIES(${Qt5Widgets_LIBRARIES})
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
+LINK_DIRECTORIES(${CERES_LIBRARIES})
 
 ##############################################################################
 # SOURCE CODE
@@ -173,7 +175,6 @@ configure_file("data/temple/temple0018.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temp
 configure_file("data/temple/temple0019.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0020.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 
-configure_file("data/temple/list.txt" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 MESSAGE("Generated: " "build/bin/temple/temple0001.png")
 MESSAGE("Generated: " "build/bin/temple/temple0002.png")
 MESSAGE("Generated: " "build/bin/temple/temple0003.png")
@@ -207,11 +208,8 @@ add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
 # TARGET LIBRARIES
 ##############################################################################
 
-set(PCL_LIBRARIES_USED ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES}
-                       ${PCL_SEGMENTATION_LIBRARIES})
-
 target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets
-                      ${PCL_LIBRARIES_USED})
+                      ${PCL_LIBRARIES})
 
 #${catkin_LIBRARIES}
 
