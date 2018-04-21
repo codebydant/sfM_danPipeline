@@ -174,6 +174,7 @@ configure_file("data/temple/temple0017.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temp
 configure_file("data/temple/temple0018.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0019.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0020.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
+configure_file("data/camera-calibration-data.xml" ${CMAKE_CURRENT_BINARY_DIR}/bin COPYONLY)
 
 MESSAGE("Generated: " "build/bin/temple/temple0001.png")
 MESSAGE("Generated: " "build/bin/temple/temple0002.png")
