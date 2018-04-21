@@ -16,13 +16,12 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 
 ### Requerimientos
 
-* OpenCV 3.2.0
-* OpenCV contrib 3.2.0
-* QT Creator 5.9.1
+* OpenCV 3.4.1
+* OpenCV contrib 3.4.1
+* QT Creator 5
 * CMake 3.10.2
 * Eigen3 3.3.4
-* Ceres 1.13.0
-* ROS Kinetic
+* Ceres 1.14.0
 * VTK 8.1.0
 
 ### Building
