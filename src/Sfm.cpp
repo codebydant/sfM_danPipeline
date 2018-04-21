@@ -7,21 +7,30 @@
 /********************************************
                   PIPELINE
 ********************************************/
-void StructFromMotion::pipeLineSFM(std::ifstream& file){
+void StructFromMotion::pipeLineSFM(){
 
   std::cout << "************************************************" << std::endl;
   std::cout << "              3D RECONSTRUCTION                 " << std::endl;
   std::cout << "************************************************" << std::endl;
 
-  bool success = false;
-  // **(0) GET CAMERA MATRIX
-  success = getCameraMatrix();
+  if(nImages.size() <= 0) {
+      std::cerr << "No images to work on." << std::endl;
+      std::exit(-1);
+  }
 
-  // **(1) IMAGES LOAD
-  success = imagesLOAD(file);
+  nCameraPoses.resize(nImages.size());
+  bool success = false;
+
 
   // **(2) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
   success = extractFeatures();
+
+  for(unsigned int i=0;i<nImages.size();i++){
+      cv::imshow("images",nImages[i]);
+      std::string str = nImagesPath.at(i);
+      std::cout << str << std::endl;
+      cv::waitKey(1000);
+    }
 
   // **(3) BASE RECONSTRUCTION
   success= baseTriangulation();
@@ -32,7 +41,7 @@ void StructFromMotion::pipeLineSFM(std::ifstream& file){
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
 
- // StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
+ //saveCloudAndCamerasToPLY("temple");
   saveCloudToPCD();
 
 }
@@ -41,16 +50,24 @@ void StructFromMotion::pipeLineSFM(std::ifstream& file){
  FUNCTIONS
 ********************************************/
 
-void StructFromMotion::run_SFM (std::ifstream& file){
+//===============================================
+//MULTITHREADING FUNCTION
+//===============================================
+
+void StructFromMotion::run_SFM (){
 
    std::thread first([&] {loadVisualizer(); });
-   std::thread second([&] {pipeLineSFM(file); });
+   std::thread second([&] {pipeLineSFM(); });
 
    //synchronize threads:
    first.join();     // pauses until first finishes
    second.join();    // pauses until second finishes
 
 }
+
+//===============================================
+//PCL VISUALIZER
+//===============================================
 
 void StructFromMotion::loadVisualizer(){
 
@@ -85,6 +102,7 @@ void StructFromMotion::loadVisualizer(){
        // Define R,G,B colors for the point cloud
        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 255, 255, 255);
        //We add the point cloud to the viewer and pass the color handler
+
        viewer.addPointCloud (cloudPCL, cloud_color, "original_cloud");
        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "original_cloud");
 
@@ -93,35 +111,54 @@ void StructFromMotion::loadVisualizer(){
 }
 
 //===============================================
-//FUNCTION: IMAGES LOAD
+//IMAGES LOAD
 //===============================================
 
-bool StructFromMotion::imagesLOAD(std::ifstream& file){
+bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
 
   std::cout << "Getting images..." << std::flush;
+  boost::filesystem::path dirPath(directoryPath);
 
-  nImages.clear();
-  if (!file.is_open()) {
-         std::cerr << "There was a problem opening the file. No images loaded!" << std::endl;
-         std::exit(-1);
+      if (not boost::filesystem::exists(dirPath) or not boost::filesystem::is_directory(dirPath)) {
+          std::cerr << "Cannot open directory: " << directoryPath << std::endl;
+          return false;
+      }
 
-  }
 
-  std::string str;
-  while(file >> str){
+      for(boost::filesystem::directory_entry& x : boost::filesystem::directory_iterator(dirPath)) {
+          std::string extension = x.path().extension().string();
+          boost::algorithm::to_lower(extension);
+          if (extension == ".jpg" or extension == ".png") {
 
-      cv::Mat img   = cv::imread(str,cv::IMREAD_COLOR);
-      cv::Mat temp = img.clone();
-      cv::Mat resize;
-      cv::resize(temp,resize,cv::Size(),0.75,0.75);
-      cv::GaussianBlur(resize,temp, cv::Size(3,3),0,0);
+              nImagesPath.push_back(x.path().string());
+          }
+      }
 
-      nImages.push_back(temp);
-      nImagesPath.push_back(str);
-    }
-  nCameraPoses.resize(nImages.size());
-  std::cout << "[DONE] "<< "\n"<< "Total images = "<< nImages.size() << std::endl;
-  return true;
+      std::sort(nImagesPath.begin(), nImagesPath.end());
+
+      if (nImagesPath.size() <= 0) {
+          std::cerr << "Unable to find valid files in images directory (\"" << directoryPath << "\")." << std::endl;
+          return false;
+      }else{
+
+         std::cout << "Found " << nImagesPath.size() << " image files in directory." << std::endl;
+      }
+
+      for (auto& imageFilename : nImagesPath) {
+          cv::Mat img   = cv::imread(imageFilename,cv::IMREAD_COLOR);
+          cv::Mat temp = img.clone();
+          cv::Mat resize;
+          cv::resize(temp,resize,cv::Size(),0.75,0.75);
+          cv::GaussianBlur(resize,temp, cv::Size(3,3),0,0);
+          nImages.push_back(temp);
+
+          if (nImages.back().empty()) {
+              std::cerr << "[x]"<<"\n" <<"Unable to read image from file: " << imageFilename << std::endl;
+              return false;
+          }
+      }
+
+  return true;  
 }
 
 //===============================================
@@ -142,16 +179,13 @@ Features StructFromMotion::getFeatures(const cv::Mat& image) {
 
 bool StructFromMotion::extractFeatures(){
 
-  std::cout << "Getting features from all images..." << std::flush;
+  std::cout << "Getting features from all images..." << std::endl;
   nFeaturesImages.resize(nImages.size());
   for(size_t n=0;n<nImages.size();n++){
 
       nFeaturesImages[n] =getFeatures(nImages[n]);
-   }
-
-  std::cout << "[DONE]" << std::endl;
+   }  
   std::cout << "Total features = " << nFeaturesImages.size() << std::endl;
-
 }
 
 //===============================================
@@ -217,7 +251,7 @@ cv::Mat StructFromMotion::imageMatching(const cv::Mat& img1,const Keypoints& key
 
 void StructFromMotion::imShow(const cv::Mat& matchImage, const std::string& str){
 
-    cv::namedWindow(str,cv::WINDOW_NORMAL);
+    cv::namedWindow(str,cv::WINDOW_NORMAL);    
     cv::resizeWindow(str,800,400);
     cv::moveWindow(str,0,0);
     cv::imshow(str,matchImage);
@@ -228,46 +262,51 @@ void StructFromMotion::imShow(const cv::Mat& matchImage, const std::string& str)
 //FUNCTION: GET CAMERA MATRIX
 //===============================================
 
-bool StructFromMotion::getCameraMatrix(){
+void StructFromMotion::getCameraMatrix(const std::string str){
 
     std::cout << "Getting camera matrix..." << std::flush;
-    cameraMatrix.K = (cv::Mat_<float>(3,3) << 1520.400000,    0,           302.320000,
-                                                  0,    1525.900000,     246.870000,
-                                                  0,        0 ,              1);
+
+    cv::Mat intrinsics;
+    cv::Mat cameraDistCoeffs;
+    cv::FileStorage fs(str, cv::FileStorage::READ);
+    fs["Camera_Matrix"] >> intrinsics;
+    fs["Distortion_Coefficients"] >> cameraDistCoeffs;
+
+    std::cout << "[DONE]" << std::endl;
+
+    if(intrinsics.empty()){
+        std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
+        std::exit(-1);
+    }
+
+    cv::Matx33f cMatrix(intrinsics);
+    std::vector<double> coefVec(cameraDistCoeffs);
+
+    cameraMatrix.K = cv::Mat_<float>(intrinsics);
+    cameraMatrix.distCoef = cv::Mat_<float>::zeros(1, 4);
+    cameraMatrix.invK = inverse(cameraMatrix.K);
+    cameraMatrix.K3x3 = cMatrix;
+    cameraMatrix.distCoefVec = coefVec;
     cameraMatrix.fx = cameraMatrix.K.at<float>(0,0);
     cameraMatrix.fy = cameraMatrix.K.at<float>(1,1);
     cameraMatrix.cx = cameraMatrix.K.at<float>(0,2);
     cameraMatrix.cy = cameraMatrix.K.at<float>(1,2);
-    cameraMatrix.invK = inverse(cameraMatrix.K);
 
-    std::cout << "[DONE]" << std::endl;
-    std::cout << "matrix K:" << "\n" << cameraMatrix.K << std::endl;
+    std::cout << "Camera matrix:" << "\n" << cameraMatrix.K << std::endl;
+    std::cout <<"Distortion coefficients: "<< std::endl;
+    std::cout << "[";
 
-    cv::Mat intrinsics;
-    cv::Mat cameraDistCoeffs;
-    cv::FileStorage fs("camera-calibration-data.xml", cv::FileStorage::READ);
-    fs["Camera_Matrix"] >> intrinsics;
-    fs["Distortion_Coefficients"] >> cameraDistCoeffs;
-    //cv::Matx33d cMatrix(cameraMatrix);
-    std::vector<double> cMatrixCoef(cameraDistCoeffs);
-    //cameraMatrix.K = intrinsics;
-    cameraMatrix.distCoef = cv::Mat_<float>::zeros(1, 4);
+    for(size_t n=0;n<cameraMatrix.distCoefVec.size();n++){
 
-     /*
-     std::cout <<"Vector distortion coeff: "<< std::endl;
-     std::cout << "[ ";
-     intrinsics.distCoef = cameraDistCoeffs;
-     for(size_t n=0;n<cMatrixCoef.size();n++){
+         std::cout << cameraMatrix.distCoefVec.at(n);
 
-         std::cout << cMatrixCoef.at(n) << ",";
+         if(n<cameraMatrix.distCoefVec.size()-1){
+             std::cout << ",";
+           }else{
+             continue;
+           }
        }
-     std::cout <<"]" << std::endl;
-     */
-     if(cameraMatrix.K.empty()){
-         std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
-         std::exit(-1);
-     }
-     return true;
+    std::cout <<"]" << std::endl;
 }
 
 //===============================================
@@ -321,8 +360,6 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
   return det;
 }
 
-
-
 //===============================================
 //FUNCTION: ALIGNED POINTS
 //===============================================
@@ -350,9 +387,6 @@ void StructFromMotion::AlignedPoints(const Features& left,const Features& right,
         idLeftOrigen.push_back(matches[i].queryIdx);
         idRightOrigen.push_back(matches[i].trainIdx);
       }
-
-     // StructFromMotion::keypoints2F(alignedL.kps,alignedL.pt2D);
-     // StructFromMotion::keypoints2F(alignedR.kps,alignedR.pt2D);
 }
 
 //===============================================
@@ -420,9 +454,7 @@ bool StructFromMotion::baseTriangulation(){
   nDoneViews.insert(leftView);
   nDoneViews.insert(rightView);
 
-  //updateVisualizer(nReconstructionCloud);
-
- // adjustCurrentBundle() ;
+  //adjustCurrentBundle() ;
   return true;
 }
 
@@ -565,7 +597,6 @@ bool StructFromMotion::triangulateViews(const Features& left,const Features& rig
           pointcloud.push_back(p);
   }
 
-  std::cout << "[DONE]" << std::endl;
   std::cout << "Pointcloud size = " << pointcloud.size() << std::endl;
 
   return true;
@@ -624,11 +655,10 @@ void StructFromMotion::addMoreViews(){
 
    std::cout << "[DONE]" << std::endl;
    std::cout << "Adding new pointcloud..." << std::flush;
-  mergeNewPoints(pointcloud);
-  std::cout << "[DONE]" << std::endl;
- //updateVisualizer(nReconstructionCloud);
+   mergeNewPoints(pointcloud);
+   std::cout << "[DONE]" << std::endl;
 
-   //adjustCurrentBundle() ;
+  //adjustCurrentBundle() ;
  }
 
 
@@ -713,7 +743,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
          }//End for-(vector point3D comparison)
        }//End for-(best matches vector comparison)
 
-       if(matches2D3D.pts2D.size()< 80){
+       if(matches2D3D.pts2D.size()< 50){
 
            std::cerr << "Not found enough points for PnPRansac, found: "
                      << matches2D3D.pts2D.size() << std::endl;
@@ -982,4 +1012,88 @@ void StructFromMotion::saveCloudToPCD(){
 
 
 
+void StructFromMotion::meshingPointCloud(){
+/*
+  pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("Meshing",true);
+  viewer.setPosition(0,0);
+  viewer.setSize(800,600);
 
+  viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
+
+  // Fill in the cloud data
+  cloudPCL->width    = nReconstructionCloud.size();
+  cloudPCL->height   = 1;
+  cloudPCL->is_dense = false;
+  cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
+
+  for (size_t i = 0; i < cloudPCL->points.size (); ++i){
+     Point3D pt3d = nReconstructionCloud[i];
+     cloudPCL->points[i].x = pt3d.pt.x;
+     cloudPCL->points[i].y = pt3d.pt.y;
+     cloudPCL->points[i].z = pt3d.pt.z;
+  }
+
+  // Define R,G,B colors for the point cloud
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 255, 255, 255);
+  //We add the point cloud to the viewer and pass the color handler
+
+
+  // Normal estimation*
+   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
+   pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+   tree->setInputCloud (cloudPCL);
+   n.setInputCloud (cloudPCL);
+   n.setSearchMethod (tree);
+   n.setKSearch (20);
+   n.compute (*normals);
+   //* normals should not contain the point normals + surface curvatures
+
+   // Concatenate the XYZ and normal fields*
+   pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
+   pcl::concatenateFields (*cloudPCL, *normals, *cloud_with_normals);
+   //*cloud_with_normals = cloudPCL + normals;
+
+   // Create search tree*
+   pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal>);
+   tree2->setInputCloud (cloud_with_normals);
+
+   // Initialize objects
+   pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
+   pcl::PolygonMesh triangles;
+
+   // Set the maximum distance between connected points (maximum edge length)
+   gp3.setSearchRadius (50);
+
+   // Set typical values for the parameters
+   gp3.setMu (2.5);
+   gp3.setMaximumNearestNeighbors (100);
+   gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
+   gp3.setMinimumAngle(M_PI/18); // 10 degrees
+   gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
+   gp3.setNormalConsistency(false);
+
+   // Get result
+   gp3.setInputCloud (cloud_with_normals);
+   gp3.setSearchMethod (tree2);
+   gp3.reconstruct (triangles);
+
+   // Additional vertex information
+   std::vector<int> parts = gp3.getPartIDs();
+   std::vector<int> states = gp3.getPointStates();
+
+
+    viewer.addCoordinateSystem (1.0, "cloud", 0);
+    viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(cloudPCL,normals,10,0.05,"norm");
+    viewer.addPolygonMesh(triangles,"meshing");
+
+   while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
+
+
+
+       viewer.spin();
+   }
+*/
+}

@@ -1,8 +1,6 @@
 #include "include/BundleAdjustment.h"
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
-#include <mutex>
-#include <glog/logging.h>
 
 struct SimpleReprojectionError {
     SimpleReprojectionError(double observed_x, double observed_y) :
@@ -38,14 +36,14 @@ struct SimpleReprojectionError {
     // Factory to hide the construction of the CostFunction object from
     // the client code.
     static ceres::CostFunction* Create(const double observed_x, const double observed_y) {
-        return (new ceres::AutoDiffCostFunction<SimpleReprojectionError, 2, 6, 3, 1>(
+        return (new ceres::AutoDiffCostFunction<SimpleReprojectionError, 2, 6, 3,1>(
                 new SimpleReprojectionError(observed_x, observed_y)));
     }
     double observed_x;
     double observed_y;
 };
 
-void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,CameraData&                  intrinsics,const std::vector<Features>& image2dFeatures) {
+void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& extrinsics,CameraData&                  intrinsics,const std::vector<Features>& image2dFeatures) {
 
      std::cout << "Bundle adjuster..." << std::flush;
 
@@ -56,9 +54,9 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
     //Convert camera pose parameters from [R|t] (3x4) to [Angle-Axis (3), Translation (3), focal (1)] (1x7)
     using  CameraVector = cv::Matx<double, 1, 6> ;
     std::vector<CameraVector> cameraPoses6d;
-    cameraPoses6d.reserve(cameraPoses.size());
-    for (size_t i = 0; i < cameraPoses.size(); i++) {
-        const cv::Matx34f& pose = cameraPoses[i];
+    cameraPoses6d.reserve(extrinsics.size());
+    for (size_t i = 0; i < extrinsics.size(); i++) {
+        const cv::Matx34f& pose = extrinsics[i];
 
         if (pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
             //This camera pose is empty, it should not be used in the optimization
@@ -82,7 +80,7 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
             const Point3D& p = pointCloud[i];
             points3d[i] = cv::Vec3d(p.pt.x, p.pt.y, p.pt.z);
 
-            for (const auto& kv : p.idxImage) {
+            for (const std::pair<const int,int>& kv : p.idxImage) {
                 //kv.first  = camera index
                 //kv.second = 2d feature index
                 cv::Point2f p2d = image2dFeatures[kv.first].pt2D[kv.second];
@@ -97,20 +95,23 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
                 ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
 
                 problem.AddResidualBlock(cost_function,
-                        NULL /* squared loss */,
+                        NULL,
                         cameraPoses6d[kv.first].val,
                         points3d[i].val,
                                             &focal);
             }
     }
 
+
     // Make Ceres automatically detect the bundle structure. Note that the
     // standard solver, SPARSE_NORMAL_CHOLESKY, also works fine but it is slower
     // for standard bundle adjustment problems.
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.use_nonmonotonic_steps = true;
+    options.preconditioner_type = ceres::SCHUR_JACOBI;
+    options.linear_solver_type = ceres::ITERATIVE_SCHUR;
     options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 500;
+    options.max_num_iterations = 100;
     options.eta = 1e-2;
     options.max_solver_time_in_seconds = 10;
     options.logging_type = ceres::LoggingType::SILENT;
@@ -132,9 +133,8 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
 
 
     //Implement the optimized camera poses and 3D points back into the reconstruction
-    for (size_t i = 0; i < cameraPoses.size(); i++) {
-        cv::Matx34f& pose = cameraPoses[i];
-        cv::Matx34f poseBefore = pose;
+    for (size_t i = 0; i < extrinsics.size(); i++) {
+        cv::Matx34f& pose = extrinsics[i];
 
         if (pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
             //This camera pose is empty, it was not used in the optimization
@@ -163,3 +163,4 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cam
         pointCloud[i].pt.z = points3d[i](2);
     }
 }
+
