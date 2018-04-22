@@ -1,10 +1,10 @@
 #include "include/Visualizer.h"
 #include "ui_Visualizer.h"
 
-
 Visualizer::Visualizer(QWidget *parent) :
   QWidget(parent),ui(new Ui::Visualizer){
   ui->setupUi(this);
+
 
 }
 
@@ -32,11 +32,16 @@ void Visualizer::showImage(const cv::Mat& image) {
 
 
 
-        this->ui->image_lbl->setPixmap(QPixmap::fromImage(_qimage));
+
 
 
         repaint();
-    }
+}
+
+void Visualizer::showPCL_Viewer(){
+
+
+}
 
 
 
