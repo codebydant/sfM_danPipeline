@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include <QWidget>
+#include "PCL_visualizer.h"
 
 namespace Ui {
   class Visualizer;
@@ -19,10 +20,12 @@ public:
 public slots:
 
   void showImage(const cv::Mat& image);
+  void showPCL_Viewer();
 
 
 private:
   Ui::Visualizer *ui;
+   pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("3D Reconstruction",true);
 
   QImage _qimage;
   cv::Mat _tmp;

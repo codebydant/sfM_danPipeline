@@ -20,6 +20,8 @@ using Matching = std::vector<cv::DMatch>;
 using Points2f = std::vector<cv::Point2f>;
 using Points3f = std::vector<cv::Point3f>;
 
+const float POSE_INLIERS_MINIMAL_RATIO = 0.5;
+
 struct Features {
 
     Keypoints	kps;
@@ -52,7 +54,7 @@ struct Point3D {
 
 struct Point3DRGB{
 
-    Point3D pt;
+  //  Point3D pt;
     cv::Scalar rgb;
 };
 
@@ -71,9 +73,9 @@ struct Pts3D2DPNP{
 
 struct Image3D2DMatch{
 
-  Pts3D2DPNP pts;
-  size_t     left;
-  size_t     right;
+  Pts3D2DPNP pts2D3D;
+  int     leftView;
+  int     rightView;
 };
 
 

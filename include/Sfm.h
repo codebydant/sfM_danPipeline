@@ -9,9 +9,7 @@
 #include <eigen3/Eigen/Dense>
 #include <thread>
 #include <boost/filesystem.hpp>
-#include <boost/multi_index/ordered_index.hpp>
 
-#include "PCL_visualizer.h"
 #include "BundleAdjustment.h"
 #include "Visualizer.h"
 
@@ -71,6 +69,7 @@ class StructFromMotion{
   //===============================================
 
   void loadVisualizer();
+  void Qt_Interface();
 
   //===============================================
   //IMAGES LOAD
@@ -163,14 +162,14 @@ class StructFromMotion{
   //===============================================
 
 
-  void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
+  bool findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
                          const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
 
   //===============================================
   //FIND 2D-3D CORRESPONDENCES
   //===============================================
 
-  Pts3D2DPNP find2D3DMatches(ImagePair& pair);
+  std::map<int,Image3D2DMatch> find2D3DMatches();
 
   //===============================================
   //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
