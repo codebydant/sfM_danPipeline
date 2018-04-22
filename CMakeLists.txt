@@ -50,8 +50,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 MESSAGE("Finding packages...")
 
-find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS core imgproc imgcodecs highgui features2d xfeatures2d)
-if(OpenCV_FOUND )
+find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR})
+if(OpenCV_FOUND)
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
 else()
@@ -82,13 +82,15 @@ else()
     message(FATAL_ERROR "    ERROR: Qt not found")
 endif()
 
-find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS common io segmentation visualization surface)
+find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR})
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
     message(STATUS "    version: ${PCL_VERSION}")
 else()
     message(FATAL_ERROR "    ERROR: PCL not found")
 endif()
+
+
 
 #find_package(catkin REQUIRED COMPONENTS
  # pcl_conversions
@@ -126,22 +128,13 @@ LINK_DIRECTORIES(${CERES_LIBRARIES})
 # SOURCE CODE
 ##############################################################################
 
-MESSAGE("---------------------------------------")
-MESSAGE("Finding source files...")
 set(SFM_HEADERS "include/Sfm.h" "include/BundleAdjustment.h" "include/Structures.h")
-MESSAGE("Found: " ${SFM_HEADERS})
 set(SFM_SOURCE "src/Sfm.cpp" "src/BundleAdjustment.cpp")
-MESSAGE("Found: " ${SFM_SOURCE})
 set(GUI_HEADERS "include/Visualizer.h")
-MESSAGE("Found: " ${GUI_HEADERS})
 set(GUI_SOURCE "src/Visualizer.cpp")
-MESSAGE("Found: " ${GUI_SOURCE})
 set(GUI_FILE "src/Visualizer.ui")
-MESSAGE("Found: " ${GUI_FILE})
 set(MAIN_SOURCE "main.cpp")
-MESSAGE("Found: " ${MAIN_SOURCE})
 set(CAM_CALIB_SOURCE "src/Camera_calibration.cpp")
-MESSAGE("Found: " ${CAM_CALIB_SOURCE})
 #FILE(GLOB_RECURSE HEADER_FILES include *.h)
 #FILE(GLOB_RECURSE SOURCES_FILES include *.cpp)
 #FILE(GLOB_RECURSE GUI_FILE include *.ui)
@@ -209,8 +202,11 @@ add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
 # TARGET LIBRARIES
 ##############################################################################
 
-target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBS} ${EIGEN3_LIBS} ${CERES_LIBRARIES} Qt5::Widgets
-                      ${PCL_LIBRARIES})
+set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_xfeatures2d
+                     opencv_imgproc opencv_imgcodecs)
+
+target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBRARIES} ${EIGEN3_LIBS} ${CERES_LIBRARIES}
+                      ${Qt5Widgets_LIBRARIES} ${PCL_LIBRARIES})
 
 #${catkin_LIBRARIES}
 

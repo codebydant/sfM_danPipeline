@@ -11,13 +11,9 @@
 
 int main(int argc, char **argv ){
 
-  //QApplication container(argc, argv);
-  //Visualizer window;
-
-
   StructFromMotion sf;   
   sf.getCameraMatrix("camera-calibration-data.xml");
-  sf.imagesLOAD("temple");
+  sf.imagesLOAD("temple");  
   sf.run_SFM();
 
   return 0;
