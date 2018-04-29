@@ -24,7 +24,7 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 To compile use CMake minimum required 3.10.2 : https://github.com/Kitware/CMake
 
 ### Prerequisite
-- OpenCV 3.4.1 + OpenCV contrib 3.4.1: https://github.com/opencv
+- OpenCV 3.4.1: https://github.com/opencv
 - Ceres Solver (for bundle adjustment): https://github.com/ceres-solver/ceres-solver
 - Boost C++ libraries v1.54+: http://www.boost.org/
 - Eigen3: https://github.com/RLovelett/eigen
