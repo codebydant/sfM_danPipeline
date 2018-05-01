@@ -11,11 +11,14 @@
 
 int main(int argc, char **argv ){
 
-  StructFromMotion sf;   
-  sf.getCameraMatrix("camera-calibration-data.xml");
-  sf.imagesLOAD("temple");  
-  sf.run_SFM();
+  QApplication container(argc, argv);
 
-  return 0;
+  StructFromMotion sf;
+  sf.interface.show();
+  sf.getCameraMatrix("camera-calibration-data.xml");
+  sf.imagesLOAD("temple");
+  sf.pipeLine();
+
+  return container.exec();
 
 }//end main

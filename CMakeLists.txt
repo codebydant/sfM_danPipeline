@@ -12,9 +12,13 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 3.10.2)
-project(Project3DRE_DT VERSION 1.0.0)
+project(PercRoboticSystem3D VERSION 1.0.0)
 
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 MESSAGE("\n" "=========================================")
 MESSAGE(" COMPILING PROJECT  ")
@@ -23,17 +27,16 @@ MESSAGE("=========================================")
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(OpenCV_DIR /home/daniel/Programas/opencv-3.4.1/build)
 set(PCL_DIR /home/daniel/Programas/pcl-master/build)
-set(EIGEN3_DIR /home/daniel/Programas/eigen-3.3.4/build)
 set(Ceres_DIR /home/daniel/Programas/ceres-1.14.0/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+
 
 ##############################################################################
 # ROS-INI
@@ -50,7 +53,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 MESSAGE("Finding packages...")
 
-find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR})
+
+set(OpenCV_Components core highgui features2d calib3d)
+
+find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
 if(OpenCV_FOUND)
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
@@ -58,15 +64,7 @@ else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
 endif()
 
-find_package(Eigen3 3.3.4 REQUIRED PATHS ${EIGEN3_DIR} NO_MODULE)
-if(Eigen3_FOUND )
-    message(STATUS "Eigen3 library status:")
-    message(STATUS "    version: ${Eigen3_VERSION}")
-else()
-    message(FATAL_ERROR "    ERROR: Eigen3 not found")
-endif()
-
-find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR})
+find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR} )
 if(Ceres_FOUND )
     message(STATUS "Ceres library status:")
     message(STATUS "    version: ${CERES_VERSION}")
@@ -82,7 +80,9 @@ else()
     message(FATAL_ERROR "    ERROR: Qt not found")
 endif()
 
-find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR})
+set(PCL_Components common io visualization)
+
+find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
     message(STATUS "    version: ${PCL_VERSION}")
@@ -101,15 +101,16 @@ endif()
 
 ##############################################################################
 # HEADERS
-##############################################################################
+#############################################################################
+#set("${VTK_LEGACY_SILENT} ON")
+#set("${VTK_LEGACY_REMOVE} ON")
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
+#INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
-include(CheckFunctionExists)
+
 
 # Use the compile definitions defined in the Qt 5 Widgets module
 add_definitions(${Qt5Widgets_DEFINITIONS})
@@ -124,21 +125,22 @@ LINK_DIRECTORIES(${Qt5Widgets_LIBRARIES})
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 LINK_DIRECTORIES(${CERES_LIBRARIES})
 
+
 ##############################################################################
 # SOURCE CODE
 ##############################################################################
 
-set(SFM_HEADERS "include/Sfm.h" "include/BundleAdjustment.h" "include/Structures.h")
+set(SFM_HEADERS "include/Sfm.h" "include/BundleAdjustment.h")
 set(SFM_SOURCE "src/Sfm.cpp" "src/BundleAdjustment.cpp")
 set(GUI_HEADERS "include/Visualizer.h")
 set(GUI_SOURCE "src/Visualizer.cpp")
 set(GUI_FILE "src/Visualizer.ui")
 set(MAIN_SOURCE "main.cpp")
-set(CAM_CALIB_SOURCE "src/Camera_calibration.cpp")
 #FILE(GLOB_RECURSE HEADER_FILES include *.h)
 #FILE(GLOB_RECURSE SOURCES_FILES include *.cpp)
 #FILE(GLOB_RECURSE GUI_FILE include *.ui)
 #add_custom_target(headers SOURCES ${HEADER_FILES} ${SOURCES_FILES} ${GUI_FILE})
+
 
 ##############################################################################
 # DATA
@@ -168,45 +170,28 @@ configure_file("data/temple/temple0018.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temp
 configure_file("data/temple/temple0019.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/temple/temple0020.png" ${CMAKE_CURRENT_BINARY_DIR}/bin/temple COPYONLY)
 configure_file("data/camera-calibration-data.xml" ${CMAKE_CURRENT_BINARY_DIR}/bin COPYONLY)
-
-MESSAGE("Generated: " "build/bin/temple/temple0001.png")
-MESSAGE("Generated: " "build/bin/temple/temple0002.png")
-MESSAGE("Generated: " "build/bin/temple/temple0003.png")
-MESSAGE("Generated: " "build/bin/temple/temple0004.png")
-MESSAGE("Generated: " "build/bin/temple/temple0005.png")
-MESSAGE("Generated: " "build/bin/temple/temple0006.png")
-MESSAGE("Generated: " "build/bin/temple/temple0007.png")
-MESSAGE("Generated: " "build/bin/temple/temple0008.png")
-MESSAGE("Generated: " "build/bin/temple/temple0009.png")
-MESSAGE("Generated: " "build/bin/temple/temple0010.png")
-MESSAGE("Generated: " "build/bin/temple/temple0011.png")
-MESSAGE("Generated: " "build/bin/temple/temple0012.png")
-MESSAGE("Generated: " "build/bin/temple/temple0013.png")
-MESSAGE("Generated: " "build/bin/temple/temple0014.png")
-MESSAGE("Generated: " "build/bin/temple/temple0015.png")
-MESSAGE("Generated: " "build/bin/temple/temple0016.png")
-MESSAGE("Generated: " "build/bin/temple/temple0017.png")
-MESSAGE("Generated: " "build/bin/temple/temple0018.png")
-MESSAGE("Generated: " "build/bin/temple/temple0019.png")
-MESSAGE("Generated: " "build/bin/temple/temple0020.png")
+MESSAGE("Generated data:/build/bin/temple")
 
 ##############################################################################
 # EXECUTABLES
 ##############################################################################
 
-set(EXECUTABLE_NAME EM3d)
-add_executable(${EXECUTABLE_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
-               ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE} include/PCL_visualizer.h)
+add_executable(${PROJECT_NAME} ${SFM_HEADERS} ${SFM_SOURCE} ${MAIN_SOURCE}
+               ${GUI_HEADERS} ${GUI_SOURCE} ${GUI_FILE} include/Utilities.h)
 
 ##############################################################################
 # TARGET LIBRARIES
 ##############################################################################
 
-set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_xfeatures2d
-                     opencv_imgproc opencv_imgcodecs)
+set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
+                     opencv_imgproc opencv_imgcodecs)       
 
-target_link_libraries(${EXECUTABLE_NAME} ${OpenCV_LIBRARIES} ${EIGEN3_LIBS} ${CERES_LIBRARIES}
-                      ${Qt5Widgets_LIBRARIES} ${PCL_LIBRARIES})
+set(PCL_LIBS ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES}
+                      ${Qt5Widgets_LIBRARIES} ${PCL_LIBS} )
+
+
 
 #${catkin_LIBRARIES}
 
