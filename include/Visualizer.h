@@ -1,35 +1,54 @@
 #ifndef VISUALIZER_H
 #define VISUALIZER_H
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
-#include <QWidget>
-#include "PCL_visualizer.h"
 
-namespace Ui {
-  class Visualizer;
+#include <QMainWindow>
+#include <qtimer.h>
+/* PCL HEADERS */
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/console/parse.h>
+#include <pcl/common/transforms.h>
+#include <pcl/visualization/pcl_visualizer.h>
+/* VTK HEADERS */
+#include <vtkSmartPointer.h>
+#include <vtkSimplePointsReader.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkVertexGlyphFilter.h>
+#include <QVTKWidget.h>
+#include "Utilities.h"
+
+using PointT=pcl::PointXYZRGBA;
+using PointCloudT=pcl::PointCloud<PointT>;
+
+namespace Ui{
+ class Visualizer;
 }
 
-class Visualizer : public QWidget
-{
-  Q_OBJECT
+class Visualizer : public QMainWindow, public Utilities{
+      Q_OBJECT
 
-public:
-  explicit Visualizer(QWidget *parent = 0);
-  ~Visualizer();
+    public:
+      explicit Visualizer(QWidget *parent = 0);
+      ~Visualizer();
 
-public slots:
+      bool addPointCloudtoVisualizer(const std::vector<Point3D>& inputCloud);
+      void updatePointCloudVisualizer(const std::vector<Point3D>& newCloud);
 
-  void showImage(const cv::Mat& image);
-  void showPCL_Viewer();
+    private:
+      Ui::Visualizer *ui;
+      pcl::visualization::PCLVisualizer::Ptr viewer;
 
-
-private:
-  Ui::Visualizer *ui;
-   pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("3D Reconstruction",true);
-
-  QImage _qimage;
-  cv::Mat _tmp;
+    public:      
+      std::vector<Point3D> PointCloud;
 
 };
 
-#endif // VISUALIZER_HPP
+
+#endif // VISUALIZER_H
