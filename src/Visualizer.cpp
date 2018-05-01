@@ -1,51 +1,93 @@
 #include "include/Visualizer.h"
 #include "ui_Visualizer.h"
 
-Visualizer::Visualizer(QWidget *parent) :
-  QWidget(parent),ui(new Ui::Visualizer){
-  ui->setupUi(this);
 
+ Visualizer::Visualizer(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::Visualizer)
+  {
+
+    ui->setupUi(this);
+    this->setWindowTitle ("PERCEPTION ROBOTIC SYSTEM");
+    viewer.reset(new pcl::visualization::PCLVisualizer ("viewer", false));
+
+    // Set up the QVTK window
+    ui->qvtkwidget->SetRenderWindow (viewer->getRenderWindow ());
+    viewer->setupInteractor (ui->qvtkwidget->GetInteractor (), ui->qvtkwidget->GetRenderWindow ());
+    viewer->setBackgroundColor(1.0, 0.5, 0.5);
+    viewer->addCoordinateSystem(1,"ucs",0);
+    ui->qvtkwidget->update();
+
+ }
+
+ bool Visualizer::addPointCloudtoVisualizer(const std::vector<Point3D>& inputCloud){
+
+   ui->qvtkwidget->SetRenderWindow (viewer->getRenderWindow ());
+   viewer->setupInteractor (ui->qvtkwidget->GetInteractor (), ui->qvtkwidget->GetRenderWindow ());
+    ui->qvtkwidget->update();
+   if(inputCloud.empty()){
+       return false;
+     }
+
+   pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
+
+   //Fill in the cloud data
+   cloudPCL->width    = inputCloud.size();
+   cloudPCL->height   = 1;
+   cloudPCL->is_dense = false;
+   cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
+
+   for(size_t i = 0; i < cloudPCL->points.size (); ++i){
+         Point3D pt3d = inputCloud[i];
+         cloudPCL->points[i].x = pt3d.pt.x;
+         cloudPCL->points[i].y = pt3d.pt.y;
+         cloudPCL->points[i].z = pt3d.pt.z;
+   }
+
+   // Define R,G,B colors for the point cloud
+   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 0, 255, 0);
+   //We add the point cloud to the viewer and pass the color handler
+   viewer->addPointCloud<pcl::PointXYZ>(cloudPCL,cloud_color,"cloud");
+   viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,"cloud");
+
+   viewer->resetCamera();
+   ui->qvtkwidget->update();
+   return true;
 
 }
 
-Visualizer::~Visualizer(){
-  delete ui;
-}
+ void Visualizer::updatePointCloudVisualizer(const std::vector<Point3D>& newCloud){
+  // viewer->removeAllPointClouds();
+   pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
 
-void Visualizer::showImage(const cv::Mat& image) {
-        // Convert the image to the RGB888 format
-        switch (image.type()) {
-        case CV_8UC1:
-            cvtColor(image, _tmp,cv::COLOR_GRAY2RGB);
-            break;
-        case CV_8UC3:
-            cvtColor(image, _tmp, cv::COLOR_BGR2RGB);
-            break;
-        }
+   //Fill in the cloud data
+   cloudPCL->width    = newCloud.size();
+   cloudPCL->height   = 1;
+   cloudPCL->is_dense = false;
+   cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
 
-        // QImage needs the data to be stored continuously in memory
-        assert(_tmp.isContinuous());
-        // Assign OpenCV's image buffer to the QImage. Note that the bytesPerLine parameter
-        // (http://qt-project.org/doc/qt-4.8/qimage.html#QImage-6) is 3*width because each pixel
-        // has three bytes.
-        _qimage = QImage(_tmp.data, _tmp.cols, _tmp.rows, _tmp.cols*3, QImage::Format_RGB888);
+   for(size_t i = 0; i < cloudPCL->points.size (); ++i){
+         Point3D pt3d = newCloud[i];
+         cloudPCL->points[i].x = pt3d.pt.x;
+         cloudPCL->points[i].y = pt3d.pt.y;
+         cloudPCL->points[i].z = pt3d.pt.z;
+   }
 
+   // Define R,G,B colors for the point cloud
+   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 0, 255, 0);
+   //We add the point cloud to the viewer and pass the color handler
 
+   viewer->updatePointCloud<pcl::PointXYZ>(cloudPCL,cloud_color,"cloud");
+ //  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,"cloud");
+  // viewer->resetCamera();
+   ui->qvtkwidget->update();
 
+ }
 
-
-
-        repaint();
-}
-
-void Visualizer::showPCL_Viewer(){
-
-
-}
-
-
-
-
+  Visualizer::~Visualizer()
+  {
+    delete ui;
+  }
 
 
 
