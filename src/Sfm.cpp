@@ -1,7 +1,6 @@
 //***********************************************
 //HEADERS
 //***********************************************
-
 #include "include/Sfm.h"
 
 /********************************************
@@ -21,13 +20,18 @@ void StructFromMotion::pipeLine(){
   nCameraPoses.resize(nImages.size());
   bool success = false;
 
-  // **(2) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
+  // **(1) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
   success = extractFeature();
+  if(not success){
+      std::cerr << "No could find features. corrupt images" << std::endl;
+      std::exit(-1);
+  }
 
+  // **(2) PRINT INPUT IMAGES
   for(unsigned int i=0;i<nImages.size();i++){
       cv::namedWindow("Input images");
       cv::resizeWindow("Input images",640,480);
-      cv::moveWindow("Input images",0,0);
+      cv::moveWindow("Input images",700,0);
       cv::imshow("Input images",nImages[i]);
       cv::waitKey(100);
 
@@ -36,16 +40,20 @@ void StructFromMotion::pipeLine(){
 
   // **(3) BASE RECONSTRUCTION 
   success= baseTriangulation();
-  success = interface.addPointCloudtoVisualizer(nReconstructionCloud);
+  if(not success){
+      std::cerr << "No could find a good pair for initial reconstruction" << std::endl;
+      std::exit(-1);
+  }
 
   // **(4) ADD MORE VIEWS
-  addMoreViews();
+  //addMoreViews();
+
+  // **(2) SAVE POINTCLOUD
+  // StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
+  //saveToPCD();
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
-
- // StructFromMotion::saveCloudAndCamerasToPLY("templePointCloud");
- saveToPCD();
 
 }
 
@@ -55,67 +63,14 @@ void StructFromMotion::pipeLine(){
 
 void StructFromMotion::run_SFM (){
 
-
-  pipeLine();
-/*
-   std::thread first([&] {loadVisualizer(); });
+   Visualizer interface;
+   std::thread first([&] {interface.addPointCloudtoPCL(nReconstructionCloud); });
    std::thread second([&] {pipeLine(); });
 
    // synchronize threads:
    first.join();                // pauses until first finishes
    second.join();               // pauses until second finishes
-*/
-}
 
-void StructFromMotion::loadVisualizer(){
-/*
-  pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("3D Reconstruction",true);
-
-  viewer.setPosition(0,0);
-  viewer.setSize(640,480);
-
-  viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
-  viewer.resetCamera();
-  viewer.setCameraPosition(0,0,7,0,0,0);
-
-  while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
-
-      viewer.addCoordinateSystem (1.0, "cloud", 0);
-      viewer.removeAllPointClouds();
-
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
-
-      // Fill in the cloud data
-      cloudPCL->width    = nReconstructionCloud.size();
-      cloudPCL->height   = 1;
-      cloudPCL->is_dense = false;
-      cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
-
-      for (size_t i = 0; i < cloudPCL->points.size (); ++i){
-         Point3D pt3d = nReconstructionCloud[i];
-         cloudPCL->points[i].x = pt3d.pt.x;
-         cloudPCL->points[i].y = pt3d.pt.y;
-         cloudPCL->points[i].z = pt3d.pt.z;
-      }
-/*
-       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPCLRGB(new pcl::PointCloud<pcl::PointXYZ> ());
-
-      for (size_t i = 0; i < nReconstructionCloudRGB.size (); ++i){
-         Point3DRGB pt3drgb = nReconstructionCloudRGB[i];
-         //cloudPCLRGB->insert(pt3drgb.rgb(0),pt3drgb.rgb(1),pt3drgb.rgb(2));
-
-      }
-
-      // Define R,G,B colors for the point cloud
-      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 255, 255, 255);
-      //We add the point cloud to the viewer and pass the color handler
-
-      viewer.addPointCloud (cloudPCL, cloud_color, "original_cloud");
-      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "original_cloud");
-
-      viewer.spinOnce(100);
-  }
-  */
 }
 
 //===============================================
@@ -144,7 +99,8 @@ bool StructFromMotion::imagesLOAD(const std::string& directoryPath){
       std::sort(nImagesPath.begin(), nImagesPath.end());
 
       if (nImagesPath.size() <= 0) {
-          std::cerr << "Unable to find valid files in images directory (\"" << directoryPath << "\")." << std::endl;
+          std::cerr << "Unable to find valid files in images directory (\""
+                    << directoryPath << "\")." << std::endl;
           return false;
       }else{
 
@@ -172,7 +128,7 @@ bool StructFromMotion::imagesLOAD(const std::string& directoryPath){
 //FUNCTION: OBTENER Feature
 //===============================================
 
-Utilities::Feature StructFromMotion::getFeature(const cv::Mat& image) {
+Feature StructFromMotion::getFeature(const cv::Mat& image) {
     Feature feature;
     ptrFeature2D->detect(image,feature.kps);
     ptrFeature2D->compute(image,feature.kps,feature.descriptors);
@@ -194,6 +150,7 @@ bool StructFromMotion::extractFeature(){
    }
 
   std::cout << "Total Feature = " << nFeatureImages.size() << std::endl;
+  return true;
 }
 
 //===============================================
@@ -212,10 +169,6 @@ void StructFromMotion::keypoints2F(Keypoints& keypoints, Points2f& points2D){
 //===============================================
 //FUNCTION: FEATURE MATCHING
 //===============================================
-
-/*
- *MÉTODO 1 (CROSS-CHECK FILTER)
- */
 
 Matching StructFromMotion::getMatching(const Feature& left,const Feature& right){
 
@@ -246,12 +199,12 @@ Matching StructFromMotion::getMatching(const Feature& left,const Feature& right)
 cv::Mat StructFromMotion::imageMatching(const cv::Mat& img1,const Keypoints& keypoints1,
                                         const cv::Mat& img2,const Keypoints& keypoints2,const Matching& matches){
 
-  cv::Mat matchImage,temp;
+  cv::Mat matchImage;
   cv::drawMatches(img1,keypoints1,img2,keypoints2,matches,matchImage,
                   cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),2);
-  cv::resize(matchImage,temp,cv::Size(640,480));
+  //cv::resize(matchImage,temp,cv::Size(640,480));
 
-  return temp;
+  return matchImage;
 }
 
 //===============================================
@@ -369,8 +322,6 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
   return det;
 }
 
-
-
 //===============================================
 //FUNCTION: ALIGNED POINTS
 //===============================================
@@ -398,7 +349,6 @@ void StructFromMotion::AlignedPoints(const Feature& left,const Feature& right,co
         idLeftOrigen.push_back(matches[i].queryIdx);
         idRightOrigen.push_back(matches[i].trainIdx);
       }
-
 }
 
 //===============================================
@@ -425,8 +375,8 @@ bool StructFromMotion::baseTriangulation(){
 
       std::cout << "Estimating camera pose..." << std::flush;
       bool success = false;
-      //correspondences = getMatching(nFeatureImages[leftView],nFeatureImages[rightView]);
-      correspondences = matchingFor2D3D(nFeatureImages[leftView],nFeatureImages[rightView]);
+      correspondences = getMatching(nFeatureImages[leftView],nFeatureImages[rightView]);
+     // correspondences = matchingFor2D3D(nFeatureImages[leftView],nFeatureImages[rightView]);
       success = getCameraPose(cameraMatrix,correspondences,nFeatureImages[leftView],
                               nFeatureImages[rightView],prunedMatching, Pleft, Pright);
       std::cout << "[DONE]" << std::endl;
@@ -458,8 +408,10 @@ bool StructFromMotion::baseTriangulation(){
                                      nImages[rightView],nFeatureImages[rightView].kps,prunedMatching);
       cv::resize(outImg, outImg, cv::Size(), 0.5, 0.5);
       cv::namedWindow("Best pair matching");
-      cv::resizeWindow("Best pair matching",640,480);
-      cv::moveWindow("Best pair matching",600,0);
+      //cv::resizeWindow("Best pair matching",640,480);
+      cv::putText(outImg, "Image " + std::to_string(leftView) + "-Image" + std::to_string(rightView),
+                  cv::Point(10,50),cv::FONT_ITALIC,0.5,cv::Scalar(0,255,0),1);
+      cv::moveWindow("Best pair matching",700,0);
       cv::imshow("Best pair matching", outImg);
       cv::waitKey(3000);
       cv::destroyWindow("Best pair matching");
@@ -494,7 +446,7 @@ bool StructFromMotion::baseTriangulation(){
 //FUNCTION: FIND BEST PAIR
 //===============================================
 
-std::map<int,Utilities::ImagePair> StructFromMotion::findBestPair(){
+std::map<int,ImagePair> StructFromMotion::findBestPair(){
 
   std::map<int,ImagePair> numInliers; 
   const size_t numImg = nImages.size();
@@ -504,16 +456,19 @@ std::map<int,Utilities::ImagePair> StructFromMotion::findBestPair(){
      for(size_t j=i+1;j<numImg;j++){
 
          Matching correspondences;
-         correspondences = matchingFor2D3D(nFeatureImages[i],nFeatureImages[j]);
-
+         correspondences = getMatching(nFeatureImages[i],nFeatureImages[j]);
          cv::Mat outImg = imageMatching(nImages[i],nFeatureImages[i].kps,
                                         nImages[j],nFeatureImages[j].kps,correspondences);
-         cv::resize(outImg, outImg, cv::Size(), 0.5, 0.5);
+cv::Mat temp;
+         cv::resize(outImg, temp, cv::Size(), 0.5, 0.5);
          cv::namedWindow("Matching pairs");
-        // cv::resizeWindow("Matching pairs",640,480);
-         cv::moveWindow("Matching pairs",800,0);
-         cv::imshow("Matching pairs", outImg);
-        cv::waitKey(1);
+
+         cv::resizeWindow("Matching pairs",640,480);
+         cv::moveWindow("Matching pairs",700,0);
+
+         cv::imshow("Matching pairs", temp);
+         cv::waitKey(4);
+
         if(correspondences.size()<30){
             continue;
         }else{
@@ -525,12 +480,6 @@ std::map<int,Utilities::ImagePair> StructFromMotion::findBestPair(){
             }else{
 
               numInliers[N]={i,j};
-/*
-              if(numInliers.size()==10){
-                  cv::destroyWindow("Matching pairs");
-                  return numInliers;
-                }
-                */
 
             }
         }
@@ -724,7 +673,7 @@ void StructFromMotion::addMoreViews(){
 
         success = triangulateViews(nFeatureImages[leftView],nFeatureImages[rightView],
                                                      nCameraPoses[leftView],nCameraPoses[rightView],
-                                                     prunedMatching,cameraMatrix,
+                                                     newMatch,cameraMatrix,
                                                      {leftView,rightView},pointcloud);
 
         if(success){
@@ -758,7 +707,7 @@ void StructFromMotion::addMoreViews(){
 //FUNCTION: FIND CORRESPONDENCES 2D-3D
 //===============================================
 
-std::map<int,Utilities::Image3D2DMatch> StructFromMotion::find2D3DMatches(){
+std::map<int,Image3D2DMatch> StructFromMotion::find2D3DMatches(){
 
    std::map<int,Image3D2DMatch> pts2D3D;
    Image3D2DMatch matches2D3D;

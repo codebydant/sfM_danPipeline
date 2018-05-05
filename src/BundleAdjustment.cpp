@@ -41,7 +41,7 @@ struct SimpleReprojectionError {
       double observed_y;
   };
 
-void adjustBundle(std::vector<Utilities::Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,Utilities::CameraData& intrinsics,const std::vector<Utilities::Feature>& image2dFeatures) {
+void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& cameraPoses,CameraData& intrinsics,const std::vector<Feature>& image2dFeatures) {
 
        std::cout << "Bundle adjuster..." << std::flush;
 
@@ -75,7 +75,7 @@ void adjustBundle(std::vector<Utilities::Point3D>& pointCloud,std::vector<cv::Ma
           std::vector<cv::Vec3d> points3d(pointCloud.size());
 
           for (int i = 0; i < pointCloud.size(); i++) {
-              const Utilities::Point3D& p = pointCloud[i];
+              const Point3D& p = pointCloud[i];
               points3d[i] = cv::Vec3d(p.pt.x, p.pt.y, p.pt.z);
 
               for (const auto& kv : p.idxImage) {
