@@ -64,7 +64,7 @@ void StructFromMotion::pipeLine(){
 void StructFromMotion::run_SFM (){
 
    Visualizer interface;
-   std::thread first([&] {interface.addPointCloudtoPCL(nReconstructionCloud); });
+   std::thread first([&] {interface.addPointCloudtoPCL(nReconstructionCloud,cloudRGB); });
    std::thread second([&] {pipeLine(); });
 
    // synchronize threads:
@@ -438,6 +438,9 @@ bool StructFromMotion::baseTriangulation(){
       break;
 
   }//End for best views
+
+  GetRGBForPointCloud(nReconstructionCloud,cloudRGB);
+
 
   return true;
 }
@@ -1180,6 +1183,45 @@ Matching StructFromMotion::matchingFor2D3D(Feature& feature1,Feature& feature2){
 
 return buenosMatches;
 
+}
+
+void StructFromMotion::GetRGBForPointCloud(std::vector<Point3D>& _pcloud,
+                                           std::vector<cv::Vec3b>& RGBforCloud){
+
+
+        RGBforCloud.resize(_pcloud.size());
+        for (unsigned int i = 0; i < _pcloud.size(); i++) {
+                unsigned int good_view = 0;
+                std::vector<cv::Vec3b> point_colors;
+                for (; good_view < nImages.size(); good_view++) {
+
+                        if (_pcloud[i].idxImage[good_view] != -1) {
+                                int pt_idx = _pcloud[i].idxImage[good_view];
+                                if (pt_idx >= nFeatureImages[good_view].pt2D.size()) {
+                                   std::cerr << "BUG: point id:" << pt_idx
+                                           << " should not exist for img #" << good_view
+                                            << " which has only " << nFeatureImages[good_view].pt2D.size()
+                                            << std::endl;
+                                        continue;
+                                 }
+                                 cv::Point _pt = nFeatureImages[good_view].pt2D[pt_idx];
+                             //   assert(good_view < nImages.size() && _pt.x < nImages[good_view].cols && _pt.y < nImages[good_view].rows);
+
+                                        point_colors.push_back(nImages[good_view].at<cv::Vec3b>(_pt));
+
+				}
+			}
+			//cv::waitKey(0);
+			cv::Scalar res_color = cv::mean(point_colors);
+			RGBforCloud[i] = (cv::Vec3b(res_color[0], res_color[1], res_color[2])); //bgr2rgb
+
+
+			//if(good_view == nImages.size()) //nothing found.. put red dot
+			//   RGBforCloud.push_back(cv::Vec3b(255, 0, 0));
+		}
+
+	 std::cout << "yeah" << std::endl;
+	  std::cout << "yeah22" << RGBforCloud.size()<<std::endl;
 }
 
 

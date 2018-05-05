@@ -1,6 +1,6 @@
 #include "include/Visualizer.h"
 
-void Visualizer::addPointCloudtoPCL(const std::vector<Point3D>& inputPointCloud){
+void Visualizer::addPointCloudtoPCL(const std::vector<Point3D>& inputPointCloud,const std::vector<cv::Vec3b>& cloudRGB){
 
   pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("3D Reconstruction",true);
 
@@ -12,26 +12,27 @@ void Visualizer::addPointCloudtoPCL(const std::vector<Point3D>& inputPointCloud)
   viewer.resetCamera();
   while(!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
 
-
       viewer.removeAllPointClouds();
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
-      // Fill in the cloud data
-      cloudPCL->width    = inputPointCloud.size();
-      cloudPCL->height   = 1;
-      cloudPCL->is_dense = false;
-      cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
-
-      for (size_t i = 0; i < cloudPCL->points.size (); ++i){
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZRGB> ());
+      for (unsigned int i = 0; i < inputPointCloud.size(); ++i){
          Point3D pt3d = inputPointCloud[i];
-         cloudPCL->points[i].x = pt3d.pt.x;
-         cloudPCL->points[i].y = pt3d.pt.y;
-         cloudPCL->points[i].z = pt3d.pt.z;
-      }
-      // Define R,G,B colors for the point cloud
-      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 0, 255, 0);
-      //We add the point cloud to the viewer and pass the color handler
+         cv::Vec3b rgbv(255,255,255);
+         pcl::PointXYZRGB pclp;
+         pclp.x  = pt3d.pt.x;
+         pclp.y  = pt3d.pt.y;
+         pclp.z  = pt3d.pt.z;
+         rgbv = cloudRGB[i];
 
-      viewer.addPointCloud (cloudPCL, cloud_color, "original_cloud");
+         // RGB color, needs to be represented as an integer
+         uint32_t rgb = ((uint32_t)rgbv[2] << 16 | (uint32_t)rgbv[1] << 8 | (uint32_t)rgbv[0]);
+         pclp.rgb = *reinterpret_cast<float*>(&rgb);
+        cloudPCL->push_back(pclp);
+      }
+
+      cloudPCL->width = (uint32_t) cloudPCL->points.size(); // number of points
+      cloudPCL->height = 1;	// a list, one row of data
+
+      viewer.addPointCloud (cloudPCL, "original_cloud");
       viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "original_cloud");
 
       viewer.spinOnce(100);
