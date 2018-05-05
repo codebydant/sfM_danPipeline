@@ -22,7 +22,8 @@ class Visualizer{
 
      }
 
-     void addPointCloudtoPCL(const std::vector<Point3D>& inputPointCloud);
+     void addPointCloudtoPCL(const std::vector<Point3D>& inputPointCloud,
+                             const std::vector<cv::Vec3b>& cloudRGB);
 
 };
 

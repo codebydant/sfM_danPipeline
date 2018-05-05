@@ -18,6 +18,7 @@ class StructFromMotion {
       std::vector<cv::Matx34f>                nCameraPoses;
       std::vector<Feature>                    nFeatureImages;
       std::vector<Point3DRGB>                 nReconstructionCloudRGB;
+      std::vector<cv::Vec3b> cloudRGB;
       std::vector<Point3D>                    nReconstructionCloud;
       std::vector<std::string>                nImagesPath;
       std::set<int>                           nDoneViews;
@@ -161,6 +162,9 @@ class StructFromMotion {
     void saveToPCD();
 
     void keypoints2F(Keypoints& keypoints, Points2f& points2D);
+
+    void GetRGBForPointCloud( std::vector<Point3D>& _pcloud,
+                                               std::vector<cv::Vec3b>& RGBforCloud);
 
 };//Fin class
 
