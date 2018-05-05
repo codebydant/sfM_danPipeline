@@ -29,8 +29,6 @@ To compile use CMake minimum required 3.10.2 : https://github.com/Kitware/CMake
 - Boost C++ libraries v1.54+: http://www.boost.org/
 - Eigen3: https://github.com/RLovelett/eigen
 - PCL 1.8.1: https://github.com/PointCloudLibrary/pcl
-- VTK 8.1.0: https://github.com/Kitware/VTK
-- QT Creator 5.9.1: https://www.qt.io/download-qt-installer?hsCtaTracking=9f6a2170-a938-42df-a8e2-a9f0b1d6cdce%7C6cb0de4f-9bb5-4778-ab02-bfb62735f3e5
 
 ### How to make
 Download the src code: git@github.com:danielTobon43/Proyecto-grado-3D-recons.git and Unpack .zip
