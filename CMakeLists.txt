@@ -15,8 +15,6 @@ cmake_minimum_required(VERSION 3.10.2)
 project(PercRoboticSystem3D VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_BUILD_TYPE "Release")
-#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 MESSAGE("\n" "=========================================")
 MESSAGE(" COMPILING PROJECT  ")
@@ -30,7 +28,6 @@ set(Ceres_DIR /home/daniel/Programas/ceres-1.14.0/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-
 
 ##############################################################################
 # ROS-INI
@@ -49,14 +46,22 @@ MESSAGE("Finding packages...")
 
 set(OpenCV_Components core highgui features2d calib3d)
 find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
-if(OpenCV_FOUND)
+if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
 else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
 endif()
 
-find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR} )
+find_package(Eigen3 3.3.4 REQUIRED NO_MODULE)
+if(Eigen3_FOUND )
+    message(STATUS "Eigen3 library status:")
+    message(STATUS "    version: ${Eigen3_VERSION}")
+else()
+    message(FATAL_ERROR "    ERROR: Eigen3 not found")
+endif()
+
+find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR})
 if(Ceres_FOUND )
     message(STATUS "Ceres library status:")
     message(STATUS "    version: ${CERES_VERSION}")
@@ -73,14 +78,6 @@ else()
     message(FATAL_ERROR "    ERROR: PCL not found")
 endif()
 
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-if(Eigen3_FOUND)
-    message(STATUS "Eigen status:")
-    message(STATUS "    version: ${Eigen3_VERSION}")
-else()
-    message(FATAL_ERROR "    ERROR: Eigen3 not found")
-endif()
-
 find_package(Boost REQUIRED)
 if(Boost_FOUND )
     message(STATUS "Boost library status:")
@@ -88,7 +85,6 @@ if(Boost_FOUND )
 else()
     message(FATAL_ERROR "    ERROR: Boost not found")
 endif()
-
 
 #find_package(catkin REQUIRED COMPONENTS
  # pcl_conversions
@@ -99,14 +95,15 @@ endif()
 
 ##############################################################################
 # HEADERS
-#############################################################################
+##############################################################################
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 #INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-#include(CheckFunctionExists)
+include(CheckFunctionExists)
 
 # Use the compile definitions defined in the Qt 5 Widgets module
 add_definitions(${PCL_DEFINITIONS})
@@ -119,10 +116,10 @@ LINK_DIRECTORIES(${OpenCV_LIBRARIES})
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 LINK_DIRECTORIES(${CERES_LIBRARIES})
 
-
 ##############################################################################
 # SOURCE CODE
 ##############################################################################
+
 set(UTILITIE_HEADER "include/Utilities.h")
 set(SFM_HEADER "include/Sfm.h")
 set(SFM_SOURCE "src/Sfm.cpp")
@@ -131,11 +128,6 @@ set(VISUALIZER_SOURCE "src/Visualizer.cpp")
 set(BUNDLE_HEADER "include/BundleAdjustment.h")
 set(BUNDLE_SOURCE "src/BundleAdjustment.cpp")
 set(MAIN_SOURCE "main.cpp")
-#FILE(GLOB_RECURSE HEADER_FILES include *.h)
-#FILE(GLOB_RECURSE SOURCES_FILES include *.cpp)
-#FILE(GLOB_RECURSE GUI_FILE include *.ui)
-#add_custom_target(headers SOURCES ${HEADER_FILES} ${SOURCES_FILES} ${GUI_FILE})
-
 
 ##############################################################################
 # DATA
@@ -168,6 +160,7 @@ configure_file("data/camera-calibration-data.xml" ${EXECUTABLE_OUTPUT_PATH} COPY
 MESSAGE("Generated data:/build/bin/temple")
 MESSAGE("Generated data:/build/bin/camera-calibration-data.xml")
 
+
 ##############################################################################
 # EXECUTABLES
 ##############################################################################
@@ -192,3 +185,5 @@ target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES}
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
 MESSAGE("=========================================")
+
+
