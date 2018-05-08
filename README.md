@@ -21,12 +21,11 @@ Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimaci
 
 ## Compile
 
-To compile use CMake minimum required 3.10.2 : https://github.com/Kitware/CMake
+To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 
 ### Prerequisite
 - OpenCV 3.4.1: https://github.com/opencv
-- Ceres Solver (for bundle adjustment): https://github.com/ceres-solver/ceres-solver
-- Boost C++ libraries v1.54+: http://www.boost.org/
+- Boost C++ library: http://www.boost.org/
 - Eigen3: https://github.com/RLovelett/eigen
 - PCL 1.8.1: https://github.com/PointCloudLibrary/pcl
 
@@ -42,7 +41,7 @@ Download the src code: git@github.com:danielTobon43/Proyecto-grado-3D-recons.git
 	 ./EM3d
 
 *Note:*
-El fichero CMakeLists.txt sirve para compilar el programa con CMake 3.10.2.
+If PCL or OpenCV are not install. just compiled. pleas set the path to the current build directory in CMakeList.txt file.
 
 
 
