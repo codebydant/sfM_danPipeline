@@ -1,8 +1,8 @@
 //***********************************************
 //HEADERS
 //***********************************************
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
+//#include <ceres/ceres.h>
+//#include <ceres/rotation.h>
 #include "Visualizer.h"
 
 class BundleAdjustment {

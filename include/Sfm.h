@@ -5,7 +5,7 @@
 #include <string>
 #include <thread>
 #include <set>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/algorithm.hpp>
 #include "BundleAdjustment.h"
@@ -21,6 +21,7 @@ class StructFromMotion{
   std::vector<cv::Vec3b>                  cloudRGB;
   std::vector<std::string>                nImagesPath; 
   std::set<int>                           nDoneViews;
+  std::set<int>                           nGoodViews;
   CameraData                              cameraMatrix;
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
