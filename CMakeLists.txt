@@ -11,7 +11,7 @@
 # CMAKE CONFIGURATION
 ##############################################################################
 
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.5.1)
 project(PercRoboticSystem3D VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -22,9 +22,8 @@ MESSAGE("=========================================")
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(OpenCV_DIR /home/daniel/Programas/opencv-3.4.1/build)
-set(PCL_DIR /home/daniel/Programas/pcl-master/build)
-set(Ceres_DIR /home/daniel/Programas/ceres-1.14.0/build)
+set(OpenCV_DIR /opt/opencv-3.4.1/build)
+set(PCL_DIR /opt/pcl-1.8.1/build)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
@@ -45,7 +44,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 MESSAGE("Finding packages...")
 
 set(OpenCV_Components core highgui features2d calib3d)
-find_package(OpenCV 4.0.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
+find_package(OpenCV 3.4.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
 if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
@@ -53,37 +52,15 @@ else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
 endif()
 
-find_package(Eigen3 3.3.4 REQUIRED NO_MODULE)
-if(Eigen3_FOUND )
-    message(STATUS "Eigen3 library status:")
-    message(STATUS "    version: ${Eigen3_VERSION}")
-else()
-    message(FATAL_ERROR "    ERROR: Eigen3 not found")
-endif()
-
-find_package(Ceres 1.14.0 REQUIRED PATHS ${Ceres_DIR})
-if(Ceres_FOUND )
-    message(STATUS "Ceres library status:")
-    message(STATUS "    version: ${CERES_VERSION}")
-else()
-    message(FATAL_ERROR "    ERROR: Ceres not found")
-endif()
+include(include/Eigen/FindEigen.cmake) #Eigen include configuration file for PCL 1.8.1
 
 set(PCL_Components common io visualization)
-find_package(PCL 1.8.1 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
+find_package(PCL 1.8.0 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
     message(STATUS "    version: ${PCL_VERSION}")
 else()
     message(FATAL_ERROR "    ERROR: PCL not found")
-endif()
-
-find_package(Boost REQUIRED)
-if(Boost_FOUND )
-    message(STATUS "Boost library status:")
-    message(STATUS "    version: ${Boost_VERSION}")
-else()
-    message(FATAL_ERROR "    ERROR: Boost not found")
 endif()
 
 #find_package(catkin REQUIRED COMPONENTS
@@ -98,9 +75,6 @@ endif()
 ##############################################################################
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 #INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
 include(CheckFunctionExists)
@@ -114,7 +88,6 @@ add_definitions(${PCL_DEFINITIONS})
 
 LINK_DIRECTORIES(${OpenCV_LIBRARIES})
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
-LINK_DIRECTORIES(${CERES_LIBRARIES})
 
 ##############################################################################
 # SOURCE CODE
@@ -160,7 +133,6 @@ configure_file("data/camera-calibration-data.xml" ${EXECUTABLE_OUTPUT_PATH} COPY
 MESSAGE("Generated data:/build/bin/temple")
 MESSAGE("Generated data:/build/bin/camera-calibration-data.xml")
 
-
 ##############################################################################
 # EXECUTABLES
 ##############################################################################
@@ -173,17 +145,17 @@ add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER}
 ##############################################################################
 
 set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
-                     opencv_imgproc opencv_imgcodecs opencv_video)
+                     opencv_imgproc opencv_imgcodecs)
 
 set(PCL_LIBS ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES}
-                      ${PCL_LIBS} ${Boost_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBS})
 
 #${catkin_LIBRARIES}
 
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
 MESSAGE("=========================================")
+
 
 
