@@ -1,4 +1,5 @@
 #include "include/BundleAdjustment.h"
+/*
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
@@ -164,3 +165,4 @@ void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& ext
     }
 }
 
+*/

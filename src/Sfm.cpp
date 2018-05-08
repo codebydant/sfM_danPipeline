@@ -482,6 +482,9 @@ bool StructFromMotion::baseTriangulation(){
       nDoneViews.insert(leftImage);
       nDoneViews.insert(rightImage);
 
+      nGoodViews.insert(leftImage);
+      nGoodViews.insert(rightImage);
+
       GetRGBForPointCloud(nReconstructionCloud,cloudRGB);
       pclVisualizer.addPointCloudToPCL(nReconstructionCloud,cloudRGB);
 
@@ -720,12 +723,42 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
   Pts3D2DPNP matches2D3D;
      std::map<int,ImagePair> matchesSizes;
 
-     //Buscar si el frame N está en la nube de puntos
-     for(size_t newFrame=0;newFrame<nImages.size();newFrame++){
+     std::vector<int> newFrames;
+     newFrames.resize(4);
+    std::set<int> bestPair;
+     for(int newArray:nGoodViews){
 
+         int i = newArray-1;
+         int ii =newArray+1;
+         if(nGoodViews.count(i)== 1){
+             continue;
+           }else{
+             newFrames.push_back(i);
+           }
+
+         if(nGoodViews.count(ii)== 1){
+             continue;
+           }else{
+             newFrames.push_back(ii);
+           }
+        }
+
+
+
+     //Buscar si el frame N está en la nube de puntos
+     for(int new_frame : newFrames){
+
+          for(size_t framePC:nGoodViews){
          std::cout << "Finding best frame to add!" << std::endl;
 
-        if(nDoneViews.count(newFrame)== 1){          
+         const Matching Match = getMatching(nFeatureImages[framePC],nFeatureImages[new_frame]);
+         const size_t bestSizeMatches = Match.size();
+         matchesSizes[bestSizeMatches]={framePC,new_frame};
+         continue;
+
+       }
+/*
+        if(nDoneViews.count(newFrame)== 1){
           std::cerr << "Frame:" << newFrame << " is already add" << std::endl;
           continue; //Pase al siguiente frame
         }
@@ -737,7 +770,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
             matchesSizes[bestSizeMatches]={framePC,newFrame};
             continue;
         }
-
+*/
         std::map<int,ImagePair>::const_iterator pos = std::prev(matchesSizes.end());
         const size_t bestMatchSize = pos->first;
 
