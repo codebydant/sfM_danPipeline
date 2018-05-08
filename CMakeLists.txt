@@ -54,6 +54,14 @@ endif()
 
 include(include/Eigen/FindEigen.cmake) #Eigen include configuration file for PCL 1.8.1
 
+find_package(Eigen3 3.3.0 REQUIRED)
+if(Eigen3_FOUND )
+    message(STATUS "Eigen status:")
+    message(STATUS "    version: ${Eigen3_VERSION}")
+else()
+    message(FATAL_ERROR "    ERROR: Eigen not found")
+endif()
+
 set(PCL_Components common io visualization)
 find_package(PCL 1.8.0 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
 if(PCL_FOUND)
@@ -75,11 +83,12 @@ endif()
 ##############################################################################
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
-#INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
+#INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 include(CheckFunctionExists)
 
-# Use the compile definitions defined in the Qt 5 Widgets module
+# Use the compile definitions defined in PCL
 add_definitions(${PCL_DEFINITIONS})
 
 ##############################################################################
@@ -149,9 +158,7 @@ set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
 
 set(PCL_LIBS ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBS})
-
-#${catkin_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBS}) #${catkin_LIBRARIES}
 
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
