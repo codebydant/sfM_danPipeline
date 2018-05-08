@@ -1,13 +1,11 @@
 //***********************************************
 //HEADERS
 //***********************************************
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/xfeatures2d.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <thread>
 
@@ -46,7 +44,7 @@ struct Point3D {
 
     cv::Point3f pt;    
     std::map<int,int> idxImage;
-    size_t id;
+    int id;
 
 };
 
@@ -57,8 +55,8 @@ struct Point3DRGB{
 };
 
 struct ImagePair{
-  size_t left;
-  size_t right;
+  int left;
+  int right;
 
 };
 
@@ -72,8 +70,8 @@ struct Pts3D2DPNP{
 struct Image3D2DMatch{
 
   Pts3D2DPNP pts;
-  size_t     left;
-  size_t     right;
+  int     left;
+  int     right;
 };
 
 
