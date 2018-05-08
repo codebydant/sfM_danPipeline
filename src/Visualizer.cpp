@@ -123,3 +123,91 @@ void Visualizer::visualizerShowCamera(cv::Matx33f& R, cv::Vec3f& t, float r, flo
 	visualizerShowCamera2(Eigen::Matrix<float,3,3,Eigen::RowMajor>(R.val),Eigen::Vector3f(t.val),r,g,b);
 }
 */
+
+/*
+void StructFromMotion::meshingPointCloud(){
+
+  pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("Meshing",true);
+  viewer.setPosition(0,0);
+  viewer.setSize(800,600);
+
+  viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZ> ());
+
+  // Fill in the cloud data
+  cloudPCL->width    = nReconstructionCloud.size();
+  cloudPCL->height   = 1;
+  cloudPCL->is_dense = false;
+  cloudPCL->points.resize(cloudPCL->width * cloudPCL->height);
+
+  for (size_t i = 0; i < cloudPCL->points.size (); ++i){
+     Point3D pt3d = nReconstructionCloud[i];
+     cloudPCL->points[i].x = pt3d.pt.x;
+     cloudPCL->points[i].y = pt3d.pt.y;
+     cloudPCL->points[i].z = pt3d.pt.z;
+  }
+
+  // Define R,G,B colors for the point cloud
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cloud_color(cloudPCL, 255, 255, 255);
+  //We add the point cloud to the viewer and pass the color handler
+
+
+  // Normal estimation*
+   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
+   pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+   tree->setInputCloud (cloudPCL);
+   n.setInputCloud (cloudPCL);
+   n.setSearchMethod (tree);
+   n.setKSearch (20);
+   n.compute (*normals);
+   //* normals should not contain the point normals + surface curvatures
+
+   // Concatenate the XYZ and normal fields*
+   pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
+   pcl::concatenateFields (*cloudPCL, *normals, *cloud_with_normals);
+   //*cloud_with_normals = cloudPCL + normals;
+
+   // Create search tree*
+   pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal>);
+   tree2->setInputCloud (cloud_with_normals);
+
+   // Initialize objects
+   pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
+   pcl::PolygonMesh triangles;
+
+   // Set the maximum distance between connected points (maximum edge length)
+   gp3.setSearchRadius (50);
+
+   // Set typical values for the parameters
+   gp3.setMu (2.5);
+   gp3.setMaximumNearestNeighbors (100);
+   gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
+   gp3.setMinimumAngle(M_PI/18); // 10 degrees
+   gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
+   gp3.setNormalConsistency(false);
+
+   // Get result
+   gp3.setInputCloud (cloud_with_normals);
+   gp3.setSearchMethod (tree2);
+   gp3.reconstruct (triangles);
+
+   // Additional vertex information
+   std::vector<int> parts = gp3.getPartIDs();
+   std::vector<int> states = gp3.getPointStates();
+
+
+    viewer.addCoordinateSystem (1.0, "cloud", 0);
+    viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(cloudPCL,normals,10,0.05,"norm");
+    viewer.addPolygonMesh(triangles,"meshing");
+
+   while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
+
+
+
+       viewer.spin();
+   }
+
+}
+*/
