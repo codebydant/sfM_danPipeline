@@ -15,10 +15,9 @@ class StructFromMotion{
   private:
   std::vector<cv::Mat>                    nImages;
   std::vector<cv::Matx34f>                nCameraPoses;
-  std::vector<Feature>                   nFeatureImages;
-  std::vector<Point3D>                    nReconstructionCloud;
-  std::vector<Point3DRGB>                 nReconstructionCloudRGB;
-  std::vector<cv::Vec3b>                  cloudRGB;
+  std::vector<Feature>                    nFeatureImages;
+  std::vector<Point3D>                    nReconstructionCloud; 
+  std::vector<cv::Vec3b>                  nReconstructionCloudRGB;
   std::vector<std::string>                nImagesPath; 
   std::set<int>                           nDoneViews;
   std::set<int>                           nGoodViews;
@@ -26,9 +25,8 @@ class StructFromMotion{
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
   double                                  NN_MATCH_RATIO;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCL;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr     cloudPCL;
   Visualizer pclVisualizer;
-
 
   public:
 
@@ -162,7 +160,7 @@ class StructFromMotion{
   //===============================================
 
 
-  void findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
+  bool findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
                          const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
 
   //===============================================
