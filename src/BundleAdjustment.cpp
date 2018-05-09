@@ -1,168 +1,231 @@
 #include "include/BundleAdjustment.h"
 /*
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
+#include "Math/v3d_linear.h"
+#include "Base/v3d_vrmlio.h"
+#include "Geometry/v3d_metricbundle.h"
 
-struct SimpleReprojectionError {
-    SimpleReprojectionError(double observed_x, double observed_y) :
-            observed_x(observed_x), observed_y(observed_y) {
-    }
-    template<typename T>
-    bool operator()(const T* const camera,
-                                const T* const point,
-                                        const T* const focal,
-                                                  T* residuals) const {
-        T p[3];
-        // Rotate: camera[0,1,2] are the angle-axis rotation.
-        ceres::AngleAxisRotatePoint(camera, point, p);
-
-        // Translate: camera[3,4,5] are the translation.
-        p[0] += camera[3];
-        p[1] += camera[4];
-        p[2] += camera[5];
-
-        // Perspective divide
-        const T xp = p[0] / p[2];
-        const T yp = p[1] / p[2];
-
-        // Compute final projected point position.
-        const T predicted_x = *focal * xp;
-        const T predicted_y = *focal * yp;
-
-        // The error is the difference between the predicted and observed position.
-        residuals[0] = predicted_x - T(observed_x);
-        residuals[1] = predicted_y - T(observed_y);
-        return true;
-    }
-    // Factory to hide the construction of the CostFunction object from
-    // the client code.
-    static ceres::CostFunction* Create(const double observed_x, const double observed_y) {
-        return (new ceres::AutoDiffCostFunction<SimpleReprojectionError, 2, 6, 3,1>(
-                new SimpleReprojectionError(observed_x, observed_y)));
-    }
-    double observed_x;
-    double observed_y;
-};
-
-void adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>& extrinsics,CameraData&                  intrinsics,const std::vector<Feature>& image2dFeature) {
-
-     std::cout << "Bundle adjuster..." << std::flush;
-
-    // Create residuals for each observation in the bundle adjustment problem. The
-    // parameters for cameras and points are added automatically.
-    ceres::Problem problem;
-
-    //Convert camera pose parameters from [R|t] (3x4) to [Angle-Axis (3), Translation (3), focal (1)] (1x7)
-    using  CameraVector = cv::Matx<double, 1, 6> ;
-    std::vector<CameraVector> cameraPoses6d;
-    cameraPoses6d.reserve(extrinsics.size());
-    for (size_t i = 0; i < extrinsics.size(); i++) {
-        const cv::Matx34f& pose = extrinsics[i];
-
-        if (pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
-            //This camera pose is empty, it should not be used in the optimization
-            cameraPoses6d.push_back(CameraVector());
-            continue;
-        }
-        cv::Vec3f t(pose(0, 3), pose(1, 3), pose(2, 3));
-        cv::Matx33f R = pose.get_minor<3, 3>(0, 0);
-        float angleAxis[3];
-        ceres::RotationMatrixToAngleAxis<float>(R.t().val, angleAxis); //Ceres assumes col-major...
-
-        cameraPoses6d.push_back(CameraVector(angleAxis[0],angleAxis[1],angleAxis[2],t(0),t(1),t(2)));
-    }
-
-    //focal-length factor for optimization
-        double focal = intrinsics.K.at<float>(0, 0);
-
-        std::vector<cv::Vec3d> points3d(pointCloud.size());
-
-        for (int i = 0; i < pointCloud.size(); i++) {
-            const Point3D& p = pointCloud[i];
-            points3d[i] = cv::Vec3d(p.pt.x, p.pt.y, p.pt.z);
-
-            for (const std::pair<const int,int>& kv : p.idxImage) {
-                //kv.first  = camera index
-                //kv.second = 2d feature index
-                cv::Point2f p2d = image2dFeature[kv.first].pt2D[kv.second];
-
-                //subtract center of projection, since the optimizer doesn't know what it is
-                p2d.x -= intrinsics.K.at<float>(0, 2);
-                p2d.y -= intrinsics.K.at<float>(1, 2);
-
-                // Each Residual block takes a point and a camera as input and outputs a 2
-                // dimensional residual. Internally, the cost function stores the observed
-                // image location and compares the reprojection against the observation.
-                ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
-
-                problem.AddResidualBlock(cost_function,
-                        NULL,
-                        cameraPoses6d[kv.first].val,
-                        points3d[i].val,
-                                            &focal);
-            }
-    }
-
-
-    // Make Ceres automatically detect the bundle structure. Note that the
-    // standard solver, SPARSE_NORMAL_CHOLESKY, also works fine but it is slower
-    // for standard bundle adjustment problems.
-    ceres::Solver::Options options;
-    options.use_nonmonotonic_steps = true;
-    options.preconditioner_type = ceres::SCHUR_JACOBI;
-    options.linear_solver_type = ceres::ITERATIVE_SCHUR;
-    options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 100;
-    options.eta = 1e-2;
-    options.max_solver_time_in_seconds = 10;
-    options.logging_type = ceres::LoggingType::SILENT;
-    ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
-    std::cout << "[DONE]" << std::endl;
-    std::cout << summary.BriefReport() << std::endl;
-
-    if (not (summary.termination_type == ceres::CONVERGENCE)) {
-        std::cerr << "Bundle adjustment failed." << std::endl;
-        return;
-    }
-
-    //update optimized focal
-    //intrinsics.fx = focal;
-    //intrinsics.fy = focal;
-    intrinsics.K.at<float>(0,0)=focal;
-    intrinsics.K.at<float>(1,1)=focal;
-
-
-    //Implement the optimized camera poses and 3D points back into the reconstruction
-    for (size_t i = 0; i < extrinsics.size(); i++) {
-        cv::Matx34f& pose = extrinsics[i];
-
-        if (pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
-            //This camera pose is empty, it was not used in the optimization
-            continue;
-        }
-
-        //Convert optimized Angle-Axis back to rotation matrix
-        double rotationMat[9] = { 0 };
-        ceres::AngleAxisToRotationMatrix(cameraPoses6d[i].val, rotationMat);
-
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
-                pose(c, r) = rotationMat[r * 3 + c]; //`rotationMat` is col-major...
-            }
-        }
-
-        //Translation
-        pose(0, 3) = cameraPoses6d[i](3);
-        pose(1, 3) = cameraPoses6d[i](4);
-        pose(2, 3) = cameraPoses6d[i](5);
-    }
-
-    for (int i = 0; i < pointCloud.size(); i++) {
-        pointCloud[i].pt.x = points3d[i](0);
-        pointCloud[i].pt.y = points3d[i](1);
-        pointCloud[i].pt.z = points3d[i](2);
-    }
+//count number of 2D measurements
+int Count2DMeasurements(const std::vector<Point3D>& pointcloud) {
+	int K = 0;
+	for (unsigned int i = 0; i < pointcloud.size(); i++) {
+		for (unsigned int ii = 0; ii < pointcloud[i].idxImage.size(); ii++) {
+			if (pointcloud[i].idxImage[ii] >= 0) {
+				K++;
+			}
+		}
+	}
+	return K;
 }
 
+
+inline void showErrorStatistics(double const f0,
+	StdDistortionFunction const& distortion,
+	std::vector<CameraMatrix> const& cams,
+	std::vector<Vector3d> const& Xs,
+	std::vector<Vector2d> const& measurements,
+	std::vector<int> const& correspondingView,
+	std::vector<int> const& correspondingPoint){
+	int const K = measurements.size();
+
+	double meanReprojectionError = 0.0;
+	for (int k = 0; k < K; ++k)
+	{
+		int const i = correspondingView[k];
+		int const j = correspondingPoint[k];
+		Vector2d p = cams[i].projectPoint(distortion, Xs[j]);
+
+		double reprojectionError = norm_L2(f0 * (p - measurements[k]));
+		meanReprojectionError += reprojectionError;
+	}
+	cout << "mean reprojection error (in pixels): " << meanReprojectionError / K << endl;
+}
+
+void adjustBundle(std::vector<Point3D>& pointcloud,cv::Mat& cam_matrix,
+	const std::vector<std::vector<cv::KeyPoint> >& imgpts,
+	std::map<int, cv::Matx34d>& Pmats){
+	int N = Pmats.size(), M = pointcloud.size(), K = Count2DMeasurements(pointcloud);
+
+	std::cout << "N (cams) = " << N << " M (points) = " << M << " K (measurements) = " << K << std::endl;
+
+	StdDistortionFunction distortion;
+
+	//conver camera intrinsics to BA datastructs
+	Matrix3x3d KMat;
+	makeIdentityMatrix(KMat);
+	KMat[0][0] = cam_matrix.at<double>(0, 0); //fx
+	KMat[1][1] = cam_matrix.at<double>(1, 1); //fy
+	KMat[0][1] = cam_matrix.at<double>(0, 1); //skew
+	KMat[0][2] = cam_matrix.at<double>(0, 2); //ppx
+	KMat[1][2] = cam_matrix.at<double>(1, 2); //ppy
+
+	double const f0 = KMat[0][0];
+	cout << "intrinsic before bundle = "; displayMatrix(KMat);
+	Matrix3x3d Knorm = KMat;
+	// Normalize the intrinsic to have unit focal length.
+	scaleMatrixIP(1.0 / f0, Knorm);
+	Knorm[2][2] = 1.0;
+
+	vector<int> pointIdFwdMap(M);
+	map<int, int> pointIdBwdMap;
+
+	//conver 3D point cloud to BA datastructs
+	vector<Vector3d > Xs(M);
+	for (int j = 0; j < M; ++j)
+	{
+		int pointId = j;
+		Xs[j][0] = pointcloud[j].pt.x;
+		Xs[j][1] = pointcloud[j].pt.y;
+		Xs[j][2] = pointcloud[j].pt.z;
+		pointIdFwdMap[j] = pointId;
+		pointIdBwdMap.insert(make_pair(pointId, j));
+	}
+	cout << "Read the 3D points." << endl;
+
+	vector<int> camIdFwdMap(N, -1);
+	map<int, int> camIdBwdMap;
+
+	//convert cameras to BA datastructs
+	vector<CameraMatrix> cams(N);
+	for (int i = 0; i < N; ++i)
+	{
+		int camId = i;
+		Matrix3x3d R;
+		Vector3d T;
+
+		Matx34d& P = Pmats[i];
+
+		R[0][0] = P(0, 0); R[0][1] = P(0, 1); R[0][2] = P(0, 2); T[0] = P(0, 3);
+		R[1][0] = P(1, 0); R[1][1] = P(1, 1); R[1][2] = P(1, 2); T[1] = P(1, 3);
+		R[2][0] = P(2, 0); R[2][1] = P(2, 1); R[2][2] = P(2, 2); T[2] = P(2, 3);
+
+		camIdFwdMap[i] = camId;
+		camIdBwdMap.insert(make_pair(camId, i));
+
+		cams[i].setIntrinsic(Knorm);
+		cams[i].setRotation(R);
+		cams[i].setTranslation(T);
+	}
+	cout << "Read the cameras." << endl;
+
+	vector<Vector2d > measurements;
+	vector<int> correspondingView;
+	vector<int> correspondingPoint;
+
+	measurements.reserve(K);
+	correspondingView.reserve(K);
+	correspondingPoint.reserve(K);
+
+	//convert 2D measurements to BA datastructs
+	for (unsigned int k = 0; k < pointcloud.size(); ++k)
+	{
+		for (unsigned int i = 0; i < pointcloud[k].imgpt_for_img.size(); i++) {
+			if (pointcloud[k].imgpt_for_img[i] >= 0) {
+				int view = i, point = k;
+				Vector3d p, np;
+
+				Point cvp = imgpts[i][pointcloud[k].imgpt_for_img[i]].pt;
+				p[0] = cvp.x;
+				p[1] = cvp.y;
+				p[2] = 1.0;
+
+				if (camIdBwdMap.find(view) != camIdBwdMap.end() &&
+					pointIdBwdMap.find(point) != pointIdBwdMap.end())
+				{
+					// Normalize the measurements to match the unit focal length.
+					scaleVectorIP(1.0 / f0, p);
+					measurements.push_back(Vector2d(p[0], p[1]));
+					correspondingView.push_back(camIdBwdMap[view]);
+					correspondingPoint.push_back(pointIdBwdMap[point]);
+				}
+			}
+		}
+	} // end for (k)
+
+	K = measurements.size();
+
+	cout << "Read " << K << " valid 2D measurements." << endl;
+
+	showErrorStatistics(f0, distortion, cams, Xs, measurements, correspondingView, correspondingPoint);
+
+	//	V3D::optimizerVerbosenessLevel = 1;
+	double const inlierThreshold = 2.0 / fabs(f0);
+
+	Matrix3x3d K0 = cams[0].getIntrinsic();
+	cout << "K0 = "; displayMatrix(K0);
+
+	bool good_adjustment = false;
+	{
+		ScopedBundleExtrinsicNormalizer extNorm(cams, Xs);
+		ScopedBundleIntrinsicNormalizer intNorm(cams, measurements, correspondingView);
+		CommonInternalsMetricBundleOptimizer opt(V3D::FULL_BUNDLE_FOCAL_LENGTH_PP, inlierThreshold, K0, distortion, cams, Xs,
+			measurements, correspondingView, correspondingPoint);
+		//		StdMetricBundleOptimizer opt(inlierThreshold,cams,Xs,measurements,correspondingView,correspondingPoint);
+
+		opt.tau = 1e-3;
+		opt.maxIterations = 50;
+		opt.minimize();
+
+		cout << "optimizer status = " << opt.status << endl;
+
+		good_adjustment = (opt.status != 2);
+	}
+
+	cout << "refined K = "; displayMatrix(K0);
+
+	for (int i = 0; i < N; ++i) cams[i].setIntrinsic(K0);
+
+	Matrix3x3d Knew = K0;
+	scaleMatrixIP(f0, Knew);
+	Knew[2][2] = 1.0;
+	cout << "Knew = "; displayMatrix(Knew);
+
+	showErrorStatistics(f0, distortion, cams, Xs, measurements, correspondingView, correspondingPoint);
+
+	if (good_adjustment) { //good adjustment?
+
+		//Vector3d mean(0.0, 0.0, 0.0);
+		//for (unsigned int j = 0; j < Xs.size(); ++j) addVectorsIP(Xs[j], mean);
+		//scaleVectorIP(1.0/Xs.size(), mean);
+		//
+		//vector<float> norms(Xs.size());
+		//for (unsigned int j = 0; j < Xs.size(); ++j)
+		//	norms[j] = distance_L2(Xs[j], mean);
+		//
+		//std::sort(norms.begin(), norms.end());
+		//float distThr = norms[int(norms.size() * 0.9f)];
+		//cout << "90% quantile distance: " << distThr << endl;
+
+		//extract 3D points
+		for (unsigned int j = 0; j < Xs.size(); ++j)
+		{
+			//if (distance_L2(Xs[j], mean) > 3*distThr) makeZeroVector(Xs[j]);
+
+			pointcloud[j].pt.x = Xs[j][0];
+			pointcloud[j].pt.y = Xs[j][1];
+			pointcloud[j].pt.z = Xs[j][2];
+		}
+
+		//extract adjusted cameras
+		for (int i = 0; i < N; ++i)
+		{
+			Matrix3x3d R = cams[i].getRotation();
+			Vector3d T = cams[i].getTranslation();
+
+			Matx34d P;
+			P(0, 0) = R[0][0]; P(0, 1) = R[0][1]; P(0, 2) = R[0][2]; P(0, 3) = T[0];
+			P(1, 0) = R[1][0]; P(1, 1) = R[1][1]; P(1, 2) = R[1][2]; P(1, 3) = T[1];
+			P(2, 0) = R[2][0]; P(2, 1) = R[2][1]; P(2, 2) = R[2][2]; P(2, 3) = T[2];
+
+			Pmats[i] = P;
+		}
+
+
+		//TODO: extract camera intrinsics
+		cam_matrix.at<double>(0, 0) = Knew[0][0];
+		cam_matrix.at<double>(0, 1) = Knew[0][1];
+		cam_matrix.at<double>(0, 2) = Knew[0][2];
+		cam_matrix.at<double>(1, 1) = Knew[1][1];
+		cam_matrix.at<double>(1, 2) = Knew[1][2];
+	}
+}
 */

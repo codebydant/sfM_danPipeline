@@ -8,10 +8,10 @@ void Visualizer::showPCLVisualizer(){
   viewer.setSize(800,600);
   viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
   viewer.addCoordinateSystem (1.0, "cloud", 0);
-  viewer.setCameraPosition(2,2,11,0,0,0);
+  viewer.setCameraPosition(0,0,10,0,0,0,10);
   viewer.resetCamera();
 
-  while(!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
+  while(!viewer.wasStopped()) { // Display the visualiser until 'q' key is pressed
 
       viewer.removeAllPointClouds();
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPCL(new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -47,6 +47,10 @@ void Visualizer::showPCLVisualizer(){
            visualizerShowCamera(R, cv::Vec3f(v[i](0, 3), v[i](1, 3), v[i](2, 3)), 255,0,0);
       }
       */
+      viewer.setCameraPosition(0,0,10,0,0,0,10);
+      viewer.resetCamera();
+
+
       viewer.spinOnce(100);
   }
 }
