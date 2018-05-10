@@ -16,6 +16,7 @@ void help(char** arg1){
 }
 
 int main(int argc, char **argv){
+
   /**
   // COMMAND LINE INPUT
   cv::CommandLineParser parser(argc, argv, "{help h||}{@input1||}{@input2||}");
@@ -41,6 +42,7 @@ int main(int argc, char **argv){
        help(argv);
        return 1;
    }*/
+
   StructFromMotion sf;    
   sf.imagesLOAD("temple");
   sf.getCameraMatrix("camera-calibration-data.xml");

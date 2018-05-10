@@ -11,7 +11,7 @@
 # CMAKE CONFIGURATION
 ##############################################################################
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.5.1 FATAL_ERROR)
 project(PercRoboticSystem3D VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -62,7 +62,7 @@ else()
     message(FATAL_ERROR "    ERROR: Eigen not found")
 endif()
 
-set(PCL_Components common io visualization)
+set(PCL_Components common io visualization segmentation)
 find_package(PCL 1.8.0 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
@@ -109,6 +109,8 @@ set(VISUALIZER_HEADER "include/Visualizer.h")
 set(VISUALIZER_SOURCE "src/Visualizer.cpp")
 set(BUNDLE_HEADER "include/BundleAdjustment.h")
 set(BUNDLE_SOURCE "src/BundleAdjustment.cpp")
+set(SEGMENT_HEADER "include/Segmentation.h")
+set(SEGMENT_SOURCE "src/Segmentation.cpp")
 set(MAIN_SOURCE "main.cpp")
 
 ##############################################################################
@@ -146,7 +148,7 @@ MESSAGE("Generated data:/build/bin/camera-calibration-data.xml")
 # EXECUTABLES
 ##############################################################################
 
-add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER}
+add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER} ${SEGMENT_HEADER} ${SEGMENT_SOURCE}
                ${VISUALIZER_SOURCE} ${BUNDLE_HEADER} ${BUNDLE_SOURCE} ${UTILITIE_HEADER} ${MAIN_SOURCE})
 
 ##############################################################################
@@ -156,9 +158,7 @@ add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER}
 set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
                      opencv_imgproc opencv_imgcodecs)
 
-set(PCL_LIBS ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
-
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBS}) #${catkin_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES}) #${catkin_LIBRARIES}
 
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
