@@ -2,7 +2,7 @@
 //HEADERS
 //***********************************************
 
-#include "Visualizer.h"
+#include "Segmentation.h"
 
 class BundleAdjustment {
 
