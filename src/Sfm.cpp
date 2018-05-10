@@ -30,7 +30,7 @@ void StructFromMotion::pipeLineSFM(){
 
   // **(2) PRINT INPUT IMAGES
   for(unsigned int i=0;i<nImages.size();i++){
-      cv::namedWindow("Input images");
+      cv::namedWindow("Input images",cv::WINDOW_NORMAL);
       cv::resizeWindow("Input images",nImages[i].cols,nImages[i].rows);
       cv::moveWindow("Input images",850,0);
       cv::imshow("Input images",nImages[i]);
@@ -85,32 +85,30 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
   std::cout << "Getting images..." << std::flush;
   boost::filesystem::path dirPath(directoryPath);
 
-      if (not boost::filesystem::exists(dirPath) or not boost::filesystem::is_directory(dirPath)) {
+      if(not boost::filesystem::exists(dirPath) or not boost::filesystem::is_directory(dirPath)){
           std::cerr << "Cannot open directory: " << directoryPath << std::endl;
           return false;
       }
 
-
-      for(boost::filesystem::directory_entry& x : boost::filesystem::directory_iterator(dirPath)) {
+      for(boost::filesystem::directory_entry& x : boost::filesystem::directory_iterator(dirPath)){
           std::string extension = x.path().extension().string();
           boost::algorithm::to_lower(extension);
-          if (extension == ".jpg" or extension == ".png") {
-
+          if(extension == ".jpg" or extension == ".png"){
               nImagesPath.push_back(x.path().string());
           }
       }
 
       std::sort(nImagesPath.begin(), nImagesPath.end());
 
-      if (nImagesPath.size() <= 0) {
-          std::cerr << "Unable to find valid files in images directory (\"" << directoryPath << "\")." << std::endl;
+      if(nImagesPath.size() <= 0){
+          std::cerr << "Unable to find valid files in images directory (\"" << directoryPath << "\")."
+                    << std::endl;
           return false;
       }else{
-
          std::cout << "Found " << nImagesPath.size() << " image files in directory." << std::endl;
       }
 
-      for (auto& imageFilename : nImagesPath) {
+      for(const std::string& imageFilename : nImagesPath){
           cv::Mat img   = cv::imread(imageFilename,cv::IMREAD_COLOR);
           cv::Mat temp = img.clone();
           cv::Mat resize;
@@ -118,7 +116,7 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
           cv::GaussianBlur(resize,temp, cv::Size(3,3),0,0);
           nImages.push_back(temp);
 
-          if (nImages.back().empty()) {
+          if(nImages.back().empty()) {
               std::cerr << "[x]"<<"\n" <<"Unable to read image from file: " << imageFilename << std::endl;
               return false;
           }
@@ -169,7 +167,6 @@ void StructFromMotion::keypoints2F(Keypoints& keypoints, Points2f& points2D){
 
   points2D.clear();
   for(const auto& kps: keypoints){
-
          points2D.push_back(kps.pt);
    }
 }
@@ -247,7 +244,7 @@ void StructFromMotion::getCameraMatrix(const std::string str){
 
     std::cout << "[DONE]" << std::endl;
 
-    if(intrinsics.empty()){
+    if(intrinsics.empty() or intrinsics.at<float>(2,0) !=0){
         std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
         std::exit(-1);
     }
@@ -349,12 +346,7 @@ void StructFromMotion::AlignedPoints(const Feature& left,const Feature& right,co
       //align left and right point sets
       for(unsigned int i=0;i<matches.size();i++){
 
-        //alignedL.kps.push_back(left.kps[matches[i].queryIdx]);
-        //alignedL.descriptors.push_back(left.descriptors.row(matches[i].queryIdx));
-        alignedL.pt2D.push_back(left.pt2D[matches[i].queryIdx]);
-
-        //alignedR.kps.push_back(right.kps[matches[i].trainIdx]);
-       // alignedR.descriptors.push_back(right.descriptors.row(matches[i].trainIdx));
+        alignedL.pt2D.push_back(left.pt2D[matches[i].queryIdx]);        
         alignedR.pt2D.push_back(right.pt2D[matches[i].trainIdx]);
 
         idLeftOrigen.push_back(matches[i].queryIdx);
@@ -409,11 +401,11 @@ bool StructFromMotion::baseTriangulation(){
 cv::Mat temp;
       cv::Mat outImg = imageMatching(nImages[leftImage],nFeatureImages[leftImage].kps,
                                      nImages[rightImage],nFeatureImages[rightImage].kps,prunedMatching);
-      cv::resize(outImg, temp, cv::Size(), 0.5, 0.5);
-      cv::namedWindow("Best pair matching");
+      cv::resize(outImg, temp, cv::Size(), 0.5, 0.5);      
+      cv::namedWindow("Best pair matching",cv::WINDOW_NORMAL);
       cv::resizeWindow("Best pair matching",temp.cols,temp.rows);
       cv::putText(temp, "Image " + std::to_string(leftImage) + "-Image" + std::to_string(rightImage),
-                  cv::Point(10,50),cv::FONT_ITALIC,0.5,cv::Scalar(0,255,0),1);
+                  cv::Point(10,temp.rows-10),cv::FONT_ITALIC,0.5,cv::Scalar(0,255,0),1);
       cv::moveWindow("Best pair matching",900,250);
       cv::imshow("Best pair matching", temp);
       cv::waitKey(5000);
@@ -475,8 +467,8 @@ std::map<int,ImagePair> StructFromMotion::findBestPair(){
                                        nImages[j],nFeatureImages[j].kps,correspondences);
         cv::Mat temp;
         cv::resize(outImg, temp, cv::Size(), 0.5, 0.5);
-        cv::namedWindow("Matching pairs");
-        cv::resizeWindow("Matching pairs",temp.cols,460);
+        cv::namedWindow("Matching pairs",cv::WINDOW_NORMAL);
+        cv::resizeWindow("Matching pairs",temp.cols,temp.rows);
         cv::moveWindow("Matching pairs",900,0);
         cv::imshow("Matching pairs", temp);
         cv::waitKey(1);
@@ -680,7 +672,7 @@ adjustCurrentBundle() ;
 
  std::cout << "\n"<< "=============================== " << std::endl;
  std::cout << "Images processed = " << nDoneViews.size() << " of " << nImages.size() << std::endl;
- std::cout << "PointCloud size =" << nReconstructionCloud.size() << "pts3D" << std::endl;
+ std::cout << "PointCloud size = " << nReconstructionCloud.size() << " pts3D" << std::endl;
 }
 
 //===============================================
