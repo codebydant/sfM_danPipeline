@@ -25,10 +25,9 @@ class StructFromMotion{
   cv::Ptr<cv::Feature2D>                  ptrFeature2D;
   cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
   double                                  NN_MATCH_RATIO;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr     cloudPCL;
-  Visualizer pclVisualizer;
+  ROSInterface                            visualizer;
 
-  public:
+  public: 
 
   //===============================================
   //CONSTRUCTOR

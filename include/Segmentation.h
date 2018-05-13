@@ -1,8 +1,11 @@
+//***********************************************
+//HEADERS
+//***********************************************
 #include <pcl/search/search.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/segmentation/region_growing_rgb.h>
-#include "Visualizer.h"
+#include "Ros_interface.h"
 
 class Segmentation{
 
