@@ -1,7 +1,7 @@
 #include "include/Segmentation.h"
 
 void Segmentation::color_based_growing_segmentation(){
-
+/*
   pcl::search::Search <pcl::PointXYZRGB>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZRGB> > (new pcl::search::KdTree<pcl::PointXYZRGB>);
 
    pcl::PointCloud <pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud <pcl::PointXYZRGB>);
@@ -37,4 +37,5 @@ void Segmentation::color_based_growing_segmentation(){
     while (!viewer.wasStopped ()){
         viewer.spin();
     }
+    */
 }

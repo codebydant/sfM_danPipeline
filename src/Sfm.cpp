@@ -9,6 +9,7 @@
 ********************************************/
 void StructFromMotion::pipeLineSFM(){
 
+
   std::cout << "************************************************" << std::endl;
   std::cout << "              3D RECONSTRUCTION                 " << std::endl;
   std::cout << "************************************************" << std::endl;
@@ -47,7 +48,7 @@ void StructFromMotion::pipeLineSFM(){
   }
 
   // **(4) ADD MORE VIEWS
-  addMoreViews();
+ // addMoreViews();
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
@@ -66,14 +67,14 @@ void StructFromMotion::pipeLineSFM(){
 //===============================================
 
 void StructFromMotion::run_SFM (){
-
+/*
    std::thread first([&] {pclVisualizer.showPCLVisualizer(); });
    std::thread second([&] {pipeLineSFM(); });
 
    //synchronize threads:
    first.join();     // pauses until first finishes
    second.join();    // pauses until second finishes
-
+*/
 }
 
 //===============================================
@@ -374,9 +375,7 @@ bool StructFromMotion::baseTriangulation(){
 
       Matching prunedMatching,correspondences;
       cv::Matx34f Pleft  = cv::Matx34f::eye();
-      cv::Matx34f Pright = cv::Matx34f::eye();
-
-      std::cout << "best pair:" << " image:(" <<leftImage << ") and image:("<<rightImage <<")" << std::endl;
+      cv::Matx34f Pright = cv::Matx34f::eye();      
 
       std::cout << "Getting camera pose..." << std::flush;
       correspondences = getMatching(nFeatureImages[leftImage],nFeatureImages[rightImage]);
@@ -397,8 +396,8 @@ bool StructFromMotion::baseTriangulation(){
       std::cout << "Projection2:" << "\n" << Pright << std::endl;
 
       std::cout << "Showing matches between "<< "image:" << leftImage << " and image:"
-                << rightImage << std::flush;
-cv::Mat temp;
+                << rightImage << std::endl;
+      cv::Mat temp;
       cv::Mat outImg = imageMatching(nImages[leftImage],nFeatureImages[leftImage].kps,
                                      nImages[rightImage],nFeatureImages[rightImage].kps,prunedMatching);
       cv::resize(outImg, temp, cv::Size(), 0.5, 0.5);      
@@ -412,9 +411,6 @@ cv::Mat temp;
       cv::destroyWindow("Matching pairs");
       cv::destroyWindow("Best pair matching");
 
-      // StructFromMotion::imShow(outImg,"Matching");
-
-      std::cout << " [DONE]"<<std::endl;
       std::vector<Point3D> pointcloud;
       std::vector<cv::Vec3b> cloudRGB;
 
@@ -437,13 +433,14 @@ cv::Mat temp;
       nGoodViews.insert(leftImage);
       nGoodViews.insert(rightImage);
 
-      GetRGBForPointCloud(pointcloud,cloudRGB);
-      pclVisualizer.addPointCloudToPCL(pointcloud,cloudRGB);
-
+      GetRGBForPointCloud(pointcloud,cloudRGB);      
       nReconstructionCloudRGB = cloudRGB;
+
+      visualizer.addPointCloudToRVIZ(pointcloud,cloudRGB);
 
       break;
   }
+
   //adjustCurrentBundle() ;
   return true;
 }
@@ -607,7 +604,7 @@ bool StructFromMotion::triangulateViews(const Feature& left,const Feature& right
 
 void StructFromMotion::addMoreViews(){
 
-  while(nDoneViews.size() != 5){
+  while(nDoneViews.size() != 7){
 
       std::cout <<"\n"<< "===================================="<< std::endl;
       std::cout << "Adding more views..." << std::endl;
@@ -636,11 +633,39 @@ void StructFromMotion::addMoreViews(){
          continue;
       }
 
-      std::cout << "Add frame:("<< rightView << ")"<< " - New camera pose:"<< "\n"
-                << newCameraPose << std::endl;
-
       nCameraPoses[rightView]=newCameraPose;
 
+      // start triangulating with previous GOOD views
+     for(std::set<int>::iterator done_view = nGoodViews.begin(); done_view != nGoodViews.end(); ++done_view){
+
+         int view = *done_view;
+         if(view == rightView) continue; //skip current...
+
+         std::cout << " -> " << nImagesPath[view] << std::endl;
+         std::vector<Point3D> new_triangulated;
+
+         const Matching newMatch = getMatching(nFeatureImages[rightView],nFeatureImages[view]);
+         Matching prunedMatching;
+         cv::Matx34f Pleft=  cv::Matx34f::eye();
+         cv::Matx34f Pright = cv::Matx34f::eye();
+
+         StructFromMotion::getCameraPose(cameraMatrix,newMatch,nFeatureImages[rightView],
+                                         nFeatureImages[view],prunedMatching,Pleft,Pright);
+
+         bool good_triangulation = triangulateViews(nFeatureImages[rightView],nFeatureImages[view],
+                                                    nCameraPoses[rightView],nCameraPoses[view],
+                                                    prunedMatching,cameraMatrix,{rightView,view},new_triangulated);
+
+         if (!good_triangulation){
+           continue;
+          }
+
+         std::cout << "before triangulation: " << nReconstructionCloud.size();
+         mergeNewPoints(new_triangulated);
+         std::cout << " after " << nReconstructionCloud.size() << std::endl;
+         //break;
+      }
+/*
       std::vector<Point3D> pointcloud;
       std::cout << "Triangulating points..." << std::flush;
 
@@ -661,14 +686,14 @@ void StructFromMotion::addMoreViews(){
    mergeNewPoints(pointcloud);
    std::cout << "[DONE]" << std::endl;
    std::cout << "PointCloud new size= " <<  nReconstructionCloud.size() << " pts3D" << std::endl;
-
-   nGoodViews.clear();
-   nGoodViews.insert(leftView);
+*/
+  // nGoodViews.clear();
+  // nGoodViews.insert(leftView);
    nGoodViews.insert(rightView);
 
  }
 
-adjustCurrentBundle() ;
+ adjustCurrentBundle() ;
 
  std::cout << "\n"<< "=============================== " << std::endl;
  std::cout << "Images processed = " << nDoneViews.size() << " of " << nImages.size() << std::endl;
@@ -687,8 +712,20 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
      std::set<int> newFrames;
      for(int newArray:nGoodViews){
 
-         int i = newArray-1;
-         int j =newArray+1;
+         int i;
+         int j;
+
+         if(newArray==0){
+             i=newArray;
+             j=newArray+1;
+           }else if(newArray==nImages.size()){
+             i=newArray-1;
+             j=newArray;
+           }else{
+             i=newArray -1;
+             j=newArray+1;
+           }
+
          if(nDoneViews.count(i)== 1){
              if(nDoneViews.count(j)== 1){
                  continue;
@@ -715,7 +752,7 @@ Pts3D2DPNP StructFromMotion::find2D3DMatches(ImagePair& pair){
              matchesSizes[bestSizeMatches]={framePC,new_frame};
              continue;
         }
-    }
+     }
 
         std::map<int,ImagePair>::const_iterator pos = std::prev(matchesSizes.end());
         const size_t bestMatchSize = pos->first;
@@ -889,8 +926,7 @@ void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud)
                          //This point did not match any existing cloud points - add it as new.
                          nReconstructionCloud.push_back(newPoint3D);
                          std::vector<Point3D> temp = nReconstructionCloud;
-                         GetRGBForPointCloud(temp,nReconstructionCloudRGB);
-                         pclVisualizer.addPointCloudToPCL(temp,nReconstructionCloudRGB);
+                         GetRGBForPointCloud(temp,nReconstructionCloudRGB);                       
                          break;
                  }
 
@@ -899,87 +935,9 @@ void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud)
                     continue; //Stop looking for more matching cloud points
                  }
 
-
                 }
 
               }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /*
-  const float ERROR_DISTANCE   = 0.4;
-
-      for(const Point3D& p : newPointCloud) {
-          const cv::Point3f newPoint = p.pt; //new 3D point
-
-          bool foundAnyMatchingExistingViews = false;
-          bool foundMatching3DPoint = false;
-          for(Point3D& existingPoint : nReconstructionCloud) {
-              if(cv::norm(existingPoint.pt - newPoint) < ERROR_DISTANCE) {
-                  //This point is very close to an existing 3D cloud point
-                  foundMatching3DPoint = true;
-
-                  //Look for common 2D Feature to confirm match
-                  for(const std::pair<const int,int>& newKv : p.idxImage) {
-                      //kv.first = new point's originating view
-                      //kv.second = new point's view 2D feature index
-
-                      for(const std::pair<const int,int>& existingKv : existingPoint.idxImage) {
-                          //existingKv.first = existing point's originating view
-                          //existingKv.second = existing point's view 2D feature index
-
-                          bool foundMatchingFeature = false;
-                          const int leftViewIdx  = existingKv.first;
-                          const int rightViewIdx = newKv.first;
-                          const int leftViewFeatureIdx = existingKv.second;
-                          const int rightViewFeatureIdx = newKv.second;
-
-                          if(leftViewIdx == rightViewIdx
-                              and leftViewFeatureIdx == rightViewFeatureIdx) {
-
-                                  //Found a 2D feature match for the two 3D points - merge
-                                  foundMatchingFeature = true;
-
-                                  if(foundMatchingFeature) {
-
-                                      //Add the new originating view, and feature index
-                                      for(const auto& newKv : p.idxImage) {
-                                          existingPoint.idxImage[newKv.first] = newKv.second;
-                                        }
-
-                                      foundAnyMatchingExistingViews = true;
-                                      break;
-                                  }
-                          }                      
-                      }
-                  }
-              }
-              if(foundAnyMatchingExistingViews) {
-                 break; //Stop looking for more matching cloud points
-              }
-          }
-
-          if (not foundAnyMatchingExistingViews and not foundMatching3DPoint) {
-              //This point did not match any existing cloud points - add it as new.
-              nReconstructionCloud.push_back(p);
-              std::vector<Point3D> temp = nReconstructionCloud;
-              GetRGBForPointCloud(temp,nReconstructionCloudRGB);
-              pclVisualizer.addPointCloudToPCL(temp,nReconstructionCloudRGB);
-
-          }
-   }
-      */
 
 }
 
