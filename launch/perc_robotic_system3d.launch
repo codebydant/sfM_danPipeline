@@ -1,0 +1,9 @@
+<launch>
+	<arg name="model" />	
+		
+	<!-- Launch executable project -->
+	<node name="perc_robotic_system3d" pkg="perc_robotic_system3d" type="perc_robotic_system3d"/>   
+	
+	<!-- Launch visualization in rviz -->
+	<node name="rviz" pkg="rviz" type="rviz" args="../default.rviz"  />
+</launch>
