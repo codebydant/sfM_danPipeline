@@ -3,7 +3,7 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 3.5.1 FATAL_ERROR)
-project(perc_robotic_system3d-master VERSION 1.0.0)
+project(perc_robotic_system3d VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
 
