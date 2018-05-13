@@ -42,11 +42,12 @@ int main(int argc, char **argv){
        help(argv);
        return 1;
    }*/
+  ros::init(argc, argv, "my_pcl_tutorial");
 
   StructFromMotion sf;    
-  sf.imagesLOAD("temple");
-  sf.getCameraMatrix("camera-calibration-data.xml");
-  sf.run_SFM();
+  sf.imagesLOAD("../catkin_ws/src/perc_robotic_system3d/data/temple");
+  sf.getCameraMatrix("../catkin_ws/src/perc_robotic_system3d/data/camera-calibration-data.xml");
+  sf.pipeLineSFM();
 
   return 0;
 
