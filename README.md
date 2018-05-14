@@ -34,14 +34,8 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 3. Copy the package to ROS workspace/src
 4. Compile with catkin
    
-	 cd ~/catkin_ws
-	 source devel/setup.bash
-	 roscore
-	 rosrun perc_robotic_system3d perc_robotic_system3d
-	 rosrun rviz rviz
-	 fixed_frame = base_link
-	 add PointCloud2 topic= /output
-	 add TF
+		cd ~/catkin_ws
+		catkin_make
 	 
 ### Test
 	 cd ~/catkin_ws
