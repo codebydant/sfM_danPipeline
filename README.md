@@ -32,7 +32,7 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 1. Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
 2. Rename de package to perc_robotic_system3d without "-master"
 3. Copy the package to ROS workspace/src
-   Compile with catkin:
+4. Compile with catkin
    
    	 cd ~/catkin_ws
 	 catkin_make
