@@ -46,8 +46,8 @@ int main(int argc, char **argv){
 
   StructFromMotion sf;    
   sf.imagesLOAD("../catkin_ws/src/perc_robotic_system3d/data/temple");
-  sf.getCameraMatrix("../catkin_ws/src/perc_robotic_system3d/data/camera-calibration-data.xml");
-  sf.pipeLineSFM();
+  sf.getCameraMatrix("../catkin_ws/src/perc_robotic_system3d/data/temple/camera-calibration-data.xml");
+  sf.run_SFM();
 
   return 0;
 
