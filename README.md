@@ -32,8 +32,8 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 1. Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
 2. Rename de package to perc_robotic_system3d without "-master"
 3. Copy the package to ROS workspace/src
-4.
    Compile with catkin:
+  
 
 	 cd ~/catkin_ws/
 	 catkin_make	 
@@ -41,7 +41,12 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 ### Test
 	 cd ~/catkin_ws
 	 source devel/setup.bash
-	 roslaunch perc_robotic_system3d perc_robotic_system3d.launch	 
+	 roscore
+	 rosrun perc_robotic_system3d perc_robotic_system3d
+	 rosrun rviz rviz
+	 fixed_frame = base_link
+	 add PointCloud2 topic= /output
+	 add TF
 
 *Note:*
 If OpenCV are not install. just compiled. pleas set the path to the current build directory in CMakeList.txt file.
