@@ -45,6 +45,7 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 		rosrun rviz rviz
 
 In RVIZ:
+
 	fixed_frame = base_link
 	add PointCloud2 topic= /output
 	add TF
