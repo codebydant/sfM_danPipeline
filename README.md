@@ -33,11 +33,10 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 2. Rename de package to perc_robotic_system3d without "-master"
 3. Copy the package to ROS workspace/src
    Compile with catkin:
-  
-
-	 cd ~/catkin_ws/
-	 catkin_make	 
-
+   
+   	 cd ~/catkin_ws
+	 catkin_make
+	 
 ### Test
 	 cd ~/catkin_ws
 	 source devel/setup.bash
