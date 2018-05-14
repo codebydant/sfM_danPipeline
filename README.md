@@ -38,14 +38,16 @@ To compile use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 		catkin_make
 	 
 ### Test
-	 cd ~/catkin_ws
-	 source devel/setup.bash
-	 roscore
-	 rosrun perc_robotic_system3d perc_robotic_system3d
-	 rosrun rviz rviz
-	 fixed_frame = base_link
-	 add PointCloud2 topic= /output
-	 add TF
+		cd ~/catkin_ws
+		source devel/setup.bash
+		roscore
+		rosrun perc_robotic_system3d perc_robotic_system3d
+		rosrun rviz rviz
+
+In RVIZ:
+	fixed_frame = base_link
+	add PointCloud2 topic= /output
+	add TF
 
 *Note:*
 If OpenCV are not install. just compiled. pleas set the path to the current build directory in CMakeList.txt file.
