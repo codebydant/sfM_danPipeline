@@ -1,6 +1,0 @@
-<package>
-  <description brief="perc_robotic_system3d">perc_robotic_system3d</description>
-  <depend package="roscpp" />
-  <author>Daniel Tobon</author>
-  <license>BSD</license>
-</package>
