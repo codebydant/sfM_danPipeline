@@ -8,10 +8,11 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 ----------------------
 <img src="https://github.com/danielTobon43/perc_robotic_system3d/tree/master/launch/img.png" align="center" height="200">
 
-Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimación de características dendrométricas.
-* Altura del fuste
-* Díametro del fuste
-* Volumen de la copa
+A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle adjustment. 
+* Incremental SFM
+* Bundle Adjustment
+* RViz visualizer
+* PCL Color segmentation
  
 
 ### Resources
