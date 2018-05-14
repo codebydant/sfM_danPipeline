@@ -7,13 +7,14 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 
 ----------------------
 <img src="https://github.com/danielTobon43/perc_robotic_system3d/tree/master/launch/img.png" align="center" height="200">
+[[https://github.com/danielTobon43/perc_robotic_system3d/tree/master/launch/img.png|alt=octocat]]
 
 Reconstrucción 3D de la geometría de un árbol en nubes de puntos con estimación de características dendrométricas.
 * Altura del fuste
 * Díametro del fuste
 * Volumen de la copa
  
-   
+
 ### Resources
 
 * Homepage: <http://opencv.org>
