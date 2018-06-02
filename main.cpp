@@ -42,12 +42,32 @@ int main(int argc, char **argv){
        help(argv);
        return 1;
    }*/
-  ros::init(argc, argv, "my_pcl_tutorial");
+
+  //Segmentation sg;
+  //sg.color_based_growing_segmentation();
+
+  Visualizer vs;
+//  vs.RunVisualizationThread();
 
   StructFromMotion sf;    
-  sf.imagesLOAD("../catkin_ws/src/perc_robotic_system3d/data/temple");
-  sf.getCameraMatrix("../catkin_ws/src/perc_robotic_system3d/data/temple/camera-calibration-data.xml");
-  sf.run_SFM();
+  bool success = sf.imagesLOAD("../../data/temple");
+  if(not success){
+      std::cerr << "Error: set of images is not valid." << std::endl;
+      return -1;
+  }
+  success = sf.getCameraMatrix("../../data/temple/camera_calibration_template.xml");
+  if(not success){
+      std::cerr << "Error: camera calibration file is not valid." << std::endl;
+      return -1;
+  }
+
+  success = sf.run_SFM();
+  if(not success){
+      std::cerr << "Error: Could not obtain 3D Mapping." << std::endl;
+      return -1;
+  }
+
+
 
   return 0;
 
