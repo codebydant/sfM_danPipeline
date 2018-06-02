@@ -6,7 +6,9 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 *Note:* This is not a complete and robust SfM pipeline implementation. The purpose of this code is to do a 3D reconstruction of a tree. 
 
 ----------------------
-<img src="https://github.com/danielTobon43/perc_robotic_system3d/tree/master/launch/img.png" align="center" height="200">
+## example
+
+<img src="./launch/img.png" align="center" height="200" width="450"><br>
 
 A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle adjustment. 
 * Incremental SFM
