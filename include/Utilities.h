@@ -7,6 +7,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <thread>
 
 //***********************************************
 //ALIAS
@@ -27,11 +28,9 @@ struct Feature {
 
 struct CameraData{
 
-  cv::Mat_<float> K;
+  cv::Mat K;
   cv::Mat invK;
   cv::Mat distCoef;
-  cv::Matx33f K3x3;
-  std::vector<double> distCoefVec;
   float fx;
   float fy;
   float cx;
@@ -42,7 +41,7 @@ struct CameraData{
 struct Point3D {
 
     cv::Point3f pt;    
-    std::map<int,int> idxImage;
+    std::map<const int,int> idxImage;
     int id;
 
 };
