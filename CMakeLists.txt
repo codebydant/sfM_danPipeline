@@ -31,6 +31,14 @@ else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
 endif()
 
+find_package(Ceres REQUIRED)
+if(Ceres_FOUND )
+    message(STATUS "Ceres library status:")
+    message(STATUS "    version: ${CERES_VERSION}")
+    message(STATUS "    libraries: ${CERES_LIBRARIES}")
+    message(STATUS "    include path: ${CERES_INCLUDE_DIRS}")
+endif()
+
 include(include/Eigen/FindEigen.cmake) #Eigen include configuration file for PCL 1.8.1
 
 find_package(Eigen3 3.3.0 REQUIRED)
@@ -65,6 +73,7 @@ INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(/home/daniel/Downloads/sba-master)
 include(CheckFunctionExists)
 
@@ -94,6 +103,13 @@ set(SEGMENT_SOURCE "src/Segmentation.cpp")
 set(MAIN_SOURCE "main.cpp")
 
 ##############################################################################
+# PVMVS FOLDERS
+##############################################################################
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/visualize/)
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/txt/)
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/models/)
+
+##############################################################################
 # EXECUTABLES
 ##############################################################################
 add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER} ${SEGMENT_HEADER} ${SEGMENT_SOURCE}
@@ -105,7 +121,7 @@ add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER} 
 set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
                      opencv_imgproc opencv_imgcodecs)
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} sba)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${CERES_LIBRARIES})
 
 MESSAGE("=========================================")
 MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
