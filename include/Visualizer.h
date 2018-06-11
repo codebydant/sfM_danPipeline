@@ -11,8 +11,7 @@
 class Visualizer{
 
   private:
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudPCL;
-
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPCL;
 
   public:
 
@@ -24,12 +23,13 @@ class Visualizer{
 
      }
 
-     void addPointCloudToPCL(const std::vector<Point3D>& inputCloud,
+    void addPointCloudToPCL(const std::vector<Point3D>& inputCloud,
                              const std::vector<cv::Vec3b>& inputCloudRGB);
      void fromPoint3DToPCL(const std::vector<Point3D> &inputPCL_Cloud,
                                        const std::vector<cv::Vec3b>& inputPCL_CloudRGB);
      void updatePointCloud();
      void RunVisualizationThread();
+     void showPCLVisualizer();
 
 };
 

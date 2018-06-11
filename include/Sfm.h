@@ -18,9 +18,8 @@ class StructFromMotion{
     std::vector<cv::Mat>                    nImages;
     std::vector<cv::Matx34f>                nCameraPoses;
     std::vector<Feature>                    nFeatureImages;
-    std::vector<Point3D>                    nReconstructionCloud;
-    std::vector<cv::Vec3b>                  nReconstructionCloudRGB;
     std::vector<std::string>                nImagesPath;
+    std::string                             pathImages;
     std::set<int>                           nDoneViews;
     std::set<int>                           nGoodViews;
     CameraData                              cameraMatrix;
@@ -28,10 +27,11 @@ class StructFromMotion{
     cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
     float                                   NN_MATCH_RATIO;
     pcl::PointCloud<pcl::PointXYZ>::Ptr     cloudPCL;
-    Visualizer pclVisualizer;
-    std::vector<cv::Point3f>           pointcloudNormal;
 
   public:
+
+    std::vector<Point3D>                    nReconstructionCloud;
+    std::vector<cv::Vec3b>                  nReconstructionCloudRGB;
     //===============================================
     //CONSTRUCTOR
     //===============================================
@@ -123,7 +123,7 @@ class StructFromMotion{
     //===============================================
     //ADD MORE VIEWS FUNCTION
     //===============================================
-    void addMoreViews();
+    bool addMoreViews();
     //===============================================
     //FIND CAMERA POSE WITH PNPRANSAC
     //===============================================
@@ -132,11 +132,13 @@ class StructFromMotion{
     //===============================================
     //FIND 2D-3D CORRESPONDENCES
     //===============================================
-    Pts3D2DPNP find2D3DMatches(ImagePair& pair);
+    void find2D3DMatches(const int& queryImage,const int& trainImage,const Matching& bestMatch,
+                                           std::vector<cv::Point3f>& points3D,
+                                           std::vector<cv::Point2f>& points2D);
     //===============================================
     //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
     //===============================================
-    std::map<int,ImagePair>  findBestPair();
+    std::map<float,ImagePair>  findBestPair();
     //===============================================
     //MERGE NEW POINTCLOUD
     //===============================================
@@ -154,7 +156,7 @@ class StructFromMotion{
     //===============================================
     //SAVE POINTCLOUD TO .PLY OR .PCD
     //===============================================
-    void saveCloudAndCamerasToPLY(const std::string& prefix);
+    void saveCloudAndCamerasToPLY();
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
@@ -174,7 +176,7 @@ class StructFromMotion{
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    void createCameraPosesTxt();
+    void PMVS2();
 
 };
 

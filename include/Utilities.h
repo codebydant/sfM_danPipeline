@@ -42,7 +42,7 @@ struct Point3D {
 
     cv::Point3f pt;    
     std::map<const int,int> idxImage;
-    int id;
+    std::map<const int,cv::Point2f> pt2D;
 
 };
 

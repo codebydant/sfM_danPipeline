@@ -14,7 +14,7 @@ public:
   Segmentation(){}
   ~Segmentation(){}
 
-  void color_based_growing_segmentation();
+  void color_based_growing_segmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
 
 };
