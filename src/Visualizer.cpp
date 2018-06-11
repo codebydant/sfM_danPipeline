@@ -1,6 +1,9 @@
 #include "include/Visualizer.h"
 
-void showPCLVisualizer(){
+void Visualizer::showPCLVisualizer(){
+
+
+  /*
  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("MAP3D"));
     viewer->setBackgroundColor (0, 0, 0);
     viewer->addCoordinateSystem (1.0);
@@ -13,37 +16,46 @@ void showPCLVisualizer(){
         viewer->spinOnce(100);
         boost::this_thread::sleep(boost::posix_time::microseconds (100000));
       }
+      */
 }
 
-boost::thread* _t = NULL;
+//boost::thread* _t = NULL;
 void Visualizer::RunVisualizationThread() {
-        _t = new boost::thread(showPCLVisualizer);
+        //_t = new boost::thread(showPCLVisualizer);
 }
 
 void Visualizer::updatePointCloud(){
-  /*
-  viewer->removeAllPointClouds();
-  viewer->updatePointCloud(PointCloudPCL,"original_cloud");
-  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-                                           2, "original_cloud");
-  viewer->spinOnce(100);
-*/
+
+
+
 }
 
 void Visualizer::addPointCloudToPCL(const std::vector<Point3D>& inputCloud,
                                     const std::vector<cv::Vec3b>& inputCloudRGB){
-/*
-  fromPoint3DToPCL(inputCloud,inputCloudRGB);
-  viewer->removeAllPointClouds();
-  viewer->addPointCloud(PointCloudPCL, "original_cloud");
-  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-                                           2, "original_cloud");
-  updatePointCloud();
-*/
+
+  pcl::visualization::PCLVisualizer viewer = pcl::visualization::PCLVisualizer("MAP3D",true);
+  viewer.setPosition(0,0);
+  viewer.setSize(800,600);
+  viewer.setBackgroundColor(0.05, 0.05, 0.05, 0);
+  viewer.setCameraPosition(12,14,10,0,0,0,0);
+  viewer.resetCamera();
+
+  while(!viewer.wasStopped()){
+
+          viewer.addCoordinateSystem (1.0, "ucs", 0);
+          viewer.removeAllPointClouds();
+          fromPoint3DToPCL(inputCloud,inputCloudRGB);
+          viewer.addPointCloud(cloudPCL, "original_cloud");
+          viewer.spin();
+
+      }
+
 }
 
 void Visualizer::fromPoint3DToPCL(const std::vector<Point3D> &inputPCL_Cloud,
                                   const std::vector<cv::Vec3b>& inputPCL_CloudRGB){
+
+  cloudPCL.reset(new pcl::PointCloud<pcl::PointXYZRGB> ());
 
   for(size_t i = 0; i < inputPCL_Cloud.size(); ++i){
       Point3D pt3d = inputPCL_Cloud[i];
@@ -57,11 +69,13 @@ void Visualizer::fromPoint3DToPCL(const std::vector<Point3D> &inputPCL_Cloud,
       // RGB color, needs to be represented as an integer
       uint32_t rgb = ((uint32_t)rgbv[2] << 16 | (uint32_t)rgbv[1] << 8 | (uint32_t)rgbv[0]);
       pclp.rgb = *reinterpret_cast<float*>(&rgb);
-      PointCloudPCL->points.push_back(pclp);
+      cloudPCL->push_back(pclp);
    }
 
-   PointCloudPCL->width = (uint32_t) PointCloudPCL->points.size(); // number of points
-   PointCloudPCL->height = 1;	// a list, one row of data
-   PointCloudPCL->header.frame_id ="framePointCloud";
-   PointCloudPCL->is_dense = false;
+   cloudPCL->width = (uint32_t) cloudPCL->points.size(); // number of points
+   cloudPCL->height = 1;	// a list, one row of data
+   cloudPCL->header.frame_id ="map3d";
+   cloudPCL->is_dense = false;
+
+
 }
