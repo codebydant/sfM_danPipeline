@@ -9,8 +9,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/thread/thread.hpp>
-#include "BundleAdjustment.h"
-#include <sba.h>
+#include "DendrometryE.h"
+
 
 class StructFromMotion{ 
 
@@ -24,14 +24,13 @@ class StructFromMotion{
     std::set<int>                           nGoodViews;
     CameraData                              cameraMatrix;
     cv::Ptr<cv::Feature2D>                  ptrFeature2D;
-    cv::Ptr<cv::DescriptorMatcher>          matcherFlan;
-    float                                   NN_MATCH_RATIO;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr     cloudPCL;
+    cv::Ptr<cv::DescriptorMatcher>          matcher;
+    float                                   NN_MATCH_RATIO;   
 
   public:
-
     std::vector<Point3D>                    nReconstructionCloud;
-    std::vector<cv::Vec3b>                  nReconstructionCloudRGB;
+     pcl::PointCloud<pcl::PointXYZRGB>::Ptr     cloudPCL;
+
     //===============================================
     //CONSTRUCTOR
     //===============================================
@@ -39,17 +38,13 @@ class StructFromMotion{
       /* @ FLANNBASED = 1,@ BRUTEFORCE = 2,@ BRUTEFORCE_L1 = 3,@ BRUTEFORCE_HAMMING = 4,
          @ BRUTEFORCE_HAMMINGLUT = 5,@ BRUTEFORCE_SL2 = 6  */
       ptrFeature2D = cv::ORB::create(5000.0);
-      matcherFlan = cv::DescriptorMatcher::create("BruteForce-Hamming");
+      matcher = cv::DescriptorMatcher::create(2);
       NN_MATCH_RATIO = 0.8f;
     }
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    bool run_SFM ();
-    //===============================================
-    //MULTITHREADING FUNCTION
-    //===============================================
-    void GetRGBForPointCloud(std::vector<Point3D>& _pcloud,std::vector<cv::Vec3b>& RGBforCloud);
+    bool run_SFM ();   
     //===============================================
     //PIPELINE
     //===============================================
@@ -132,9 +127,9 @@ class StructFromMotion{
     //===============================================
     //FIND 2D-3D CORRESPONDENCES
     //===============================================
-    void find2D3DMatches(const int& queryImage,const int& trainImage,const Matching& bestMatch,
+    void find2D3DMatches(const int& NEW_VIEW,
                                            std::vector<cv::Point3f>& points3D,
-                                           std::vector<cv::Point2f>& points2D);
+                                           std::vector<cv::Point2f>& points2D,Matching& bestMatches,int& DONEVIEW);
     //===============================================
     //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
     //===============================================
@@ -151,16 +146,8 @@ class StructFromMotion{
     //FIND CAMERA POSE WITH ESSENTIAL MATRIX
     //===============================================
     bool getCameraPose(const CameraData& intrinsics,const Matching & matches,
-                       const Feature& left, const Feature& right, Matching& prunedMatch,
+                       const Feature& left, const Feature& right,
                        cv::Matx34f& Pleft, cv::Matx34f& Pright);
-    //===============================================
-    //SAVE POINTCLOUD TO .PLY OR .PCD
-    //===============================================
-    void saveCloudAndCamerasToPLY();
-    //===============================================
-    //MULTITHREADING FUNCTION
-    //===============================================
-    void saveCloudToPCD();
     //===============================================
     //MESHING POINTCLOUD
     //===============================================
@@ -177,6 +164,14 @@ class StructFromMotion{
     //MULTITHREADING FUNCTION
     //===============================================
     void PMVS2();
+    void fromPoint3DToPCLCloud(const std::vector<Point3D> &input_cloud,
+                                      pcl::PointCloud<pcl::PointXYZ>::Ptr& cloudPCL);
+    void cloudPointFilter(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr &filterCloud);
+    void removePoints(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr &filterCloud);
+    void create_mesh(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,pcl::PolygonMesh &mesh);
+    void vizualizeMesh(pcl::PolygonMesh &mesh);
 
 };
 

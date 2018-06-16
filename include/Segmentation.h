@@ -2,7 +2,7 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/segmentation/region_growing_rgb.h>
-#include "Visualizer.h"
+#include "Utilities.h"
 
 class Segmentation{
 
@@ -14,7 +14,7 @@ public:
   Segmentation(){}
   ~Segmentation(){}
 
-  void color_based_growing_segmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+  void color_based_growing_segmentation();
 
 
 };
