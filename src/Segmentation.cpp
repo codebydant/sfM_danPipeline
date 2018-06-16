@@ -1,10 +1,11 @@
 #include "include/Segmentation.h"
 
-void Segmentation::color_based_growing_segmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
+void Segmentation::color_based_growing_segmentation(){
 
-  pcl::search::Search <pcl::PointXYZRGB>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZRGB> > (new pcl::search::KdTree<pcl::PointXYZRGB>);
+  pcl::search::Search <pcl::PointXYZRGB>::Ptr tree = boost::shared_ptr<pcl::search::Search<pcl::PointXYZRGB> >(new pcl::search::KdTree<pcl::PointXYZRGB>);
 
-  //cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::io::loadPCDFile("MAP3D.pcd", *cloud);
 
   std::cout << "************************************************" << std::endl;
   std::cout << "    COLOR BASE GROWING SEGMENTATION             " << std::endl;

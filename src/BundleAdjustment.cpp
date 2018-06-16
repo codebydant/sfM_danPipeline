@@ -61,10 +61,10 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
             cameraPoses6d.push_back(CameraVector());
             continue;
         }
-        cv::Vec3f t(pose(0, 3), pose(1, 3), pose(2, 3));
-        cv::Matx33f R = pose.get_minor<3, 3>(0, 0);
-        float angleAxis[3];
-        ceres::RotationMatrixToAngleAxis<float>(R.t().val, angleAxis); //Ceres assumes col-major...
+        cv::Vec3d t(pose(0, 3), pose(1, 3), pose(2, 3));
+        cv::Matx33d R = pose.get_minor<3, 3>(0, 0);
+        double angleAxis[3];
+        ceres::RotationMatrixToAngleAxis<double>(R.t().val, angleAxis); //Ceres assumes col-major...
 
         cameraPoses6d.push_back(CameraVector(
                 angleAxis[0],
@@ -76,7 +76,7 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
     }
 
     //focal-length factor for optimization
-    double focal = intrinsics.K.at<float>(0, 0);
+    double focal = (double)intrinsics.K.at<float>(0, 0);
 
     std::vector<cv::Vec3d> points3d(pointCloud.size());
 
@@ -87,11 +87,14 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
         for(const std::pair<const int,int>& kv : p.idxImage) {
             //kv.first  = camera index
             //kv.second = 2d feature index
-            cv::Point2f p2d = image2dFeatures[kv.first].pt2D[kv.second];
+            cv::Point2f p2d_float = image2dFeatures[kv.first].pt2D[kv.second];
+            cv::Point2d p2d(p2d_float);
 
             //subtract center of projection, since the optimizer doesn't know what it is
-            p2d.x -= intrinsics.K.at<float>(0, 2);
-            p2d.y -= intrinsics.K.at<float>(1, 2);
+            double cx = (double)intrinsics.K.at<float>(0, 2);
+            double cy = (double)intrinsics.K.at<float>(1, 2);
+            p2d.x -= cx;
+            p2d.y -= cy;
 
             // Each Residual block takes a point and a camera as input and outputs a 2
             // dimensional residual. Internally, the cost function stores the observed
@@ -125,9 +128,11 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
         return;
     }
 
+    std::cout << "Current K=\n" << intrinsics.K << std::endl;
     //update optimized focal
-    intrinsics.K.at<float>(0, 0) = focal;
-    intrinsics.K.at<float>(1, 1) = focal;
+    intrinsics.K.at<float>(0, 0) = (float)focal;
+    intrinsics.K.at<float>(1, 1) = (float)focal;
+    std::cout << "New Optimized K=\n" << intrinsics.K << std::endl;
 
     //Implement the optimized camera poses and 3D points back into the reconstruction
     for(size_t i = 0; i < cameraPoses.size(); i++) {
@@ -141,14 +146,21 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
 
         //Convert optimized Angle-Axis back to rotation matrix
         double rotationMat[9] = { 0 };
-        ceres::AngleAxisToRotationMatrix(cameraPoses6d[i].val, rotationMat);
+        Eigen::Matrix3f R;
+        ceres::AngleAxisToRotationMatrix(cameraPoses6d[i].val,rotationMat);
 
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
+        for(int r = 0; r < 3; r++){
+            for(int c = 0; c < 3; c++){
                 pose(c, r) = rotationMat[r * 3 + c]; //`rotationMat` is col-major...
             }
         }
 
+/*
+        //Rotation
+        pose(0,0)=rotationMat[0]; pose(0,1)=rotationMat[3]; pose(0,2)=rotationMat[6];
+        pose(1,0)=rotationMat[1]; pose(1,1)=rotationMat[4]; pose(1,2)=rotationMat[7];
+        pose(2,0)=rotationMat[2]; pose(2,1)=rotationMat[5]; pose(2,2)=rotationMat[8];
+*/
         //Translation
         pose(0, 3) = cameraPoses6d[i](3);
         pose(1, 3) = cameraPoses6d[i](4);
