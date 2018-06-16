@@ -22,8 +22,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # PACKAGES
 ##############################################################################
 MESSAGE("Finding packages...")
-set(OpenCV_Components core highgui features2d calib3d)
-find_package(OpenCV 3.4.0 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
+set(OpenCV_Components core highgui features2d calib3d xfeatures2d)
+find_package(OpenCV 3.4.1 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
 if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
@@ -58,7 +58,7 @@ else()
 endif()
 
 set(PCL_Components common io visualization segmentation)
-find_package(PCL 1.8.0 REQUIRED PATHS ${PCL_DIR} COMPONENTS ${PCL_Components})
+find_package(PCL 1.8.0 REQUIRED PATHS ${PCL_DIR})
 if(PCL_FOUND)
     message(STATUS "PCL library status:")
     message(STATUS "    version: ${PCL_VERSION}")
@@ -74,7 +74,6 @@ INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(/home/daniel/Downloads/sba-master)
 include(CheckFunctionExists)
 
 # Use the compile definitions defined in PCL
@@ -86,7 +85,6 @@ add_definitions(${PCL_DEFINITIONS})
 LINK_DIRECTORIES(${OpenCV_LIBRARIES})
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-LINK_DIRECTORIES(/home/daniel/Downloads/sba-master/build)
 
 ##############################################################################
 # SOURCE CODE
@@ -94,8 +92,6 @@ LINK_DIRECTORIES(/home/daniel/Downloads/sba-master/build)
 set(UTILITIE_HEADER "include/Utilities.h")
 set(SFM_HEADER "include/Sfm.h")
 set(SFM_SOURCE "src/Sfm.cpp")
-set(VISUALIZER_HEADER "include/Visualizer.h")
-set(VISUALIZER_SOURCE "src/Visualizer.cpp")
 set(BUNDLE_HEADER "include/BundleAdjustment.h")
 set(BUNDLE_SOURCE "src/BundleAdjustment.cpp")
 set(SEGMENT_HEADER "include/Segmentation.h")
@@ -103,23 +99,16 @@ set(SEGMENT_SOURCE "src/Segmentation.cpp")
 set(MAIN_SOURCE "main.cpp")
 
 ##############################################################################
-# PVMVS FOLDERS
-##############################################################################
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/visualize/)
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/txt/)
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin/models/)
-
-##############################################################################
 # EXECUTABLES
 ##############################################################################
-add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${VISUALIZER_HEADER} ${SEGMENT_HEADER} ${SEGMENT_SOURCE}
-               ${VISUALIZER_SOURCE} ${BUNDLE_HEADER} ${BUNDLE_SOURCE} ${UTILITIE_HEADER} ${MAIN_SOURCE})
+add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${SEGMENT_HEADER} ${SEGMENT_SOURCE}
+               ${BUNDLE_HEADER} ${BUNDLE_SOURCE} ${UTILITIE_HEADER} ${MAIN_SOURCE} include/DendrometryE.h src/DendrometryE.cpp)
 
 ##############################################################################
 # TARGET LIBRARIES
 ##############################################################################
 set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
-                     opencv_imgproc opencv_imgcodecs)
+                     opencv_imgproc opencv_imgcodecs opencv_xfeatures2d)
 
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${CERES_LIBRARIES})
 
