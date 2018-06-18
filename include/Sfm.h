@@ -25,11 +25,12 @@ class StructFromMotion{
     CameraData                              cameraMatrix;
     cv::Ptr<cv::Feature2D>                  ptrFeature2D;
     cv::Ptr<cv::DescriptorMatcher>          matcher;
-    float                                   NN_MATCH_RATIO;   
+    float                                   NN_MATCH_RATIO;
+    cv::Ptr<cv::Feature2D> detector;
 
   public:
     std::vector<Point3D>                    nReconstructionCloud;
-     pcl::PointCloud<pcl::PointXYZRGB>::Ptr     cloudPCL;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr     cloudPCL;
 
     //===============================================
     //CONSTRUCTOR
@@ -37,7 +38,22 @@ class StructFromMotion{
     StructFromMotion(){
       /* @ FLANNBASED = 1,@ BRUTEFORCE = 2,@ BRUTEFORCE_L1 = 3,@ BRUTEFORCE_HAMMING = 4,
          @ BRUTEFORCE_HAMMINGLUT = 5,@ BRUTEFORCE_SL2 = 6  */
-      ptrFeature2D = cv::ORB::create(5000.0);
+      int selector = 1;
+      switch(selector){
+
+        case 1:
+           detector= cv::xfeatures2d::SIFT::create();
+          break;
+        case 2:
+           detector= cv::AKAZE::create();
+          break;
+        case 3:
+           detector= cv::ORB::create(10000,1.2,8,15,0,2,0,31);
+          break;
+        default:
+          break;
+
+      }
       matcher = cv::DescriptorMatcher::create(2);
       NN_MATCH_RATIO = 0.8f;
     }
@@ -94,7 +110,7 @@ class StructFromMotion{
     //===============================================
     bool triangulateViews(const Feature& left,const Feature& right,const cv::Matx34f& P1,
                  const cv::Matx34f& P2,const Matching& matches,const CameraData& matrixK,
-                 const ImagePair& imagePair,std::vector<Point3D>& pointcloud);
+                 const std::pair<int,int>& imagePair,std::vector<Point3D>& pointcloud);
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
@@ -133,7 +149,7 @@ class StructFromMotion{
     //===============================================
     //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
     //===============================================
-    std::map<float,ImagePair>  findBestPair();
+    std::map<float,std::pair<int,int>>  findBestPair();
     //===============================================
     //MERGE NEW POINTCLOUD
     //===============================================
@@ -172,6 +188,9 @@ class StructFromMotion{
       pcl::PointCloud<pcl::PointXYZ>::Ptr &filterCloud);
     void create_mesh(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,pcl::PolygonMesh &mesh);
     void vizualizeMesh(pcl::PolygonMesh &mesh);
+
+    void optical_flow_feature_match();
+    void MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatch>* matches);
 
 };
 

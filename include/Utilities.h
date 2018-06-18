@@ -8,6 +8,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/flann/flann.hpp>
 #include <thread>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
@@ -29,7 +30,7 @@ using Matching = std::vector<cv::DMatch>;
 using Points2f = std::vector<cv::Point2f>;
 using Points3f = std::vector<cv::Point3f>;
 
-struct Feature {
+struct Feature{
 
     Keypoints	kps;
     Points2f	pt2D;
@@ -56,31 +57,3 @@ struct Point3D {
     std::map<const int,cv::Point2f> pt2D;
 
 };
-
-struct Point3DRGB{
-
-    Point3D pt;
-    cv::Scalar rgb;
-};
-
-struct ImagePair{
-  int left;
-  int right;
-
-};
-
-struct Pts3D2DPNP{
-
-  Points2f pts2D;
-  Points3f pts3D;
-
-};
-
-struct Image3D2DMatch{
-
-  Pts3D2DPNP pts;
-  int     left;
-  int     right;
-};
-
-
