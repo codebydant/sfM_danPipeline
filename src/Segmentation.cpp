@@ -59,6 +59,7 @@ void Segmentation::color_based_growing_segmentation(){
 
   pcl::visualization::PCLVisualizer viewer=pcl::visualization::PCLVisualizer("MAP3D Segmented",true);
   viewer.addPointCloud(colored_cloud);
+  std::cout << "Press q to finish segmentation proccess and start dendrometry estimation..." << std::endl;
   while(!viewer.wasStopped ()){
        viewer.spin();
   }
