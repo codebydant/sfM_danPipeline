@@ -43,7 +43,7 @@ struct SimpleReprojectionError {
     double observed_y;
 };
 
-void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34f>&           cameraPoses, CameraData& intrinsics, const std::vector<Feature>& image2dFeatures) {
+void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector<cv::Matx34d>&           cameraPoses, Intrinsics& intrinsics, const std::vector<std::vector<cv::Point2d>>& image2dFeatures) {
 
     // Create residuals for each observation in the bundle adjustment problem. The
     // parameters for cameras and points are added automatically.
@@ -54,7 +54,7 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
     std::vector<CameraVector> cameraPoses6d;
     cameraPoses6d.reserve(cameraPoses.size());
     for(size_t i = 0; i < cameraPoses.size(); i++){
-        const cv::Matx34f& pose = cameraPoses[i];
+        const cv::Matx34d& pose = cameraPoses[i];
 
         if(pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
             //This camera pose is empty, it should not be used in the optimization
@@ -76,7 +76,7 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
     }
 
     //focal-length factor for optimization
-    double focal = (double)intrinsics.K.at<float>(0, 0);
+    double focal = (double)intrinsics.K.at<double>(0, 0);
 
     std::vector<cv::Vec3d> points3d(pointCloud.size());
 
@@ -87,12 +87,12 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
         for(const std::pair<const int,int>& kv : p.idxImage) {
             //kv.first  = camera index
             //kv.second = 2d feature index
-            cv::Point2f p2d_float = image2dFeatures[kv.first].pt2D[kv.second];
-            cv::Point2d p2d(p2d_float);
+
+            cv::Point2d p2d = image2dFeatures[kv.first][kv.second];
 
             //subtract center of projection, since the optimizer doesn't know what it is
-            double cx = (double)intrinsics.K.at<float>(0, 2);
-            double cy = (double)intrinsics.K.at<float>(1, 2);
+            double cx = (double)intrinsics.K.at<double>(0, 2);
+            double cy = (double)intrinsics.K.at<double>(1, 2);
             p2d.x -= cx;
             p2d.y -= cy;
 
@@ -130,14 +130,14 @@ void BundleAdjustment::adjustBundle(std::vector<Point3D>& pointCloud,std::vector
 
     std::cout << "Current K=\n" << intrinsics.K << std::endl;
     //update optimized focal
-    intrinsics.K.at<float>(0, 0) = (float)focal;
-    intrinsics.K.at<float>(1, 1) = (float)focal;
+    intrinsics.K.at<double>(0, 0) = (double)focal;
+    intrinsics.K.at<double>(1, 1) = (double)focal;
     std::cout << "New Optimized K=\n" << intrinsics.K << std::endl;
 
     //Implement the optimized camera poses and 3D points back into the reconstruction
     for(size_t i = 0; i < cameraPoses.size(); i++) {
-        cv::Matx34f& pose = cameraPoses[i];
-        cv::Matx34f poseBefore = pose;
+        cv::Matx34d& pose = cameraPoses[i];
+        cv::Matx34d poseBefore = pose;
 
         if(pose(0, 0) == 0 and pose(1, 1) == 0 and pose(2, 2) == 0) {
             //This camera pose is empty, it was not used in the optimization

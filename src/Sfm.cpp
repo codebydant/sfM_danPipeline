@@ -13,36 +13,20 @@ bool StructFromMotion::run_SFM(){
   std::cout << "************************************************" << std::endl;
 
   if(nImages.size() <= 0) {
-      std::cerr << "No images to work on." << std::endl;
+      std::cout << "No images to work on." << std::endl;
       return false;
   }
-
-  nCameraPoses.resize(nImages.size()); //Define a fixed size for vector(cv::Matx34f) camera poses
 
   // **(1) FEATURE DETECTION AND EXTRACTION - ALL IMAGES
-  bool success = extractFeature();
-  if(not success){
-      std::cerr << "No could find features. corrupt images" << std::endl;
-      return false;
-  }
-
-  // **(2) PRINT INPUT IMAGES
-  for(unsigned int i=0;i<nImages.size();i++){
-      cv::namedWindow("Input images",cv::WINDOW_NORMAL);
-      cv::resizeWindow("Input images",nImages[i].cols,nImages[i].rows);
-      cv::moveWindow("Input images",0,0);
-      cv::imshow("Input images",nImages[i]);
-      cv::waitKey(100);
-  }
-  cv::destroyWindow("Input images");
+  extractFeature();
 
   // **(3) BASE RECONSTRUCTION
-  success= baseTriangulation();
+  bool success = baseReconstruction();
   if(not success){
       std::cerr << "No could find a good pair for initial reconstruction" << std::endl;
       return false;
   }
-  /*
+/*
   // **(6) VISUALIZER 3D MAPPING
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
   fromPoint3DToPCLCloud(nReconstructionCloud,cloud);
@@ -51,7 +35,7 @@ bool StructFromMotion::run_SFM(){
 
   while(!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
   }
-  */
+*/
 
   // **(4) ADD MORE VIEWS
   success = addMoreViews();
@@ -80,10 +64,19 @@ bool StructFromMotion::run_SFM(){
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPLY (new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PLYReader ply;
   ply.read("denseCloud/models/options.txt.ply",*cloudPLY);
+  if(cloudPLY->size()<=0){
+      std::cout << "Could not densify cloud --> ply file is empty. ** PMVS2 failed." << std::endl;
+      return false;
+  }
+
+  std::cout << "Densify proccess --> [OK]" << std::endl;
+  std::cout << "Saving file with prefix --> MAP3D.pcd" << std::endl;
   pcl::io::savePCDFile("MAP3D.pcd",*cloudPLY);
   cloudPCL = cloudPLY;
 
   // **(9) VISUALIZER DENSE 3D MAPPING
+  std::cout << "Visualizing MAP3D.pcd..." << std::endl;
+
   pcl::visualization::CloudViewer viewer2("DENSE MAP3D");
   viewer2.showCloud(cloudPLY,"denseCloud");
 
@@ -100,7 +93,7 @@ bool StructFromMotion::run_SFM(){
 
   cloudPointFilter(cloudXYZ,filterCloud);
   removePoints(cloudXYZ,filterCloud);
-  create_mesh(filterCloud,mesh);
+  create_mesh(cloudXYZ,mesh);
   vizualizeMesh(mesh);
 
   std::cout << "************************************************" << std::endl;
@@ -148,16 +141,12 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
   /*Read input images and save them in a images vector*/
   for(const std::string& imageFilename : nImagesPath){
       //cv::COLOR_BGR2GRAY
-      cv::Mat img   = cv::imread(imageFilename,0); //Read input image
-      cv::Mat temp = img.clone(); //Copy image to temp variable
+      cv::Mat image   = cv::imread(imageFilename); //Read input image
+      cv::Mat image_copy = image.clone(); //Copy image to temp variable
+      cv::Mat resize;
+      cv::resize(image_copy,resize,cv::Size(640,480),0.0,0.0); //Define a size of 640x480
 
-      cv::Mat resize1,resize2,GaussianBlur;
-      cv::resize(temp,resize1,cv::Size(640,480),0.0,0.0); //Define a size of 640x480
-
-     // cv::resize(resize1,resize2,cv::Size(),0.75,0.75); //Define a size of 640(75%)x480(75%)
-     // cv::GaussianBlur(resize1,GaussianBlur, cv::Size(3,3),0,0); //Apply a filter gaussian for noise
-
-      nImages.push_back(resize1); //Save input image in nImages vector
+      nImages.push_back(resize); //Save input image in nImages vector
 
       if(nImages.back().empty()) {
           std::cerr << "[x]"<<"\n" <<"Unable to read image from file: " << imageFilename << std::endl;
@@ -168,7 +157,27 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
   if(nImages.size()<2){
       std::cerr << "Sorry. is not enough images, 6 minimum" << std::endl;
       return false;
+  }
+
+  for(unsigned int i = 0; i < nImages.size(); i++){
+
+      mColorImages.push_back(cv::Mat_<cv::Vec3b>());
+      if(!nImages[i].empty()){
+          if(nImages[i].type() == CV_8UC1){
+
+              cv::cvtColor(nImages[i], mColorImages[i], CV_GRAY2BGR);
+          }else if(nImages[i].type() == CV_32FC3 || nImages[i].type() == CV_64FC3){
+
+              nImages[i].convertTo(mColorImages[i], CV_8UC3, 255.0);
+          }else{
+
+              nImages[i].copyTo(mColorImages[i]);
+          }
       }
+
+      mGrayImages.push_back(cv::Mat());
+      cv::cvtColor(mColorImages[i], mGrayImages[i], CV_BGR2GRAY);
+  }
 
   return true;
 }
@@ -182,110 +191,233 @@ bool StructFromMotion::getCameraMatrix(const std::string str){
     cv::Mat intrinsics;
     cv::Mat cameraDistCoeffs;
 
-    /*Read camera calobration file*/
+    /*Read camera calibration file*/
     cv::FileStorage fs(str, cv::FileStorage::READ);
 
     /*Get data from tags: Camera_Matrix and Distortion_Coefficients*/
     fs["Camera_Matrix"] >> intrinsics;
     fs["Distortion_Coefficients"] >> cameraDistCoeffs;
 
-    if(intrinsics.empty() or intrinsics.at<float>(2,0) !=0){
+    if(intrinsics.empty() or intrinsics.at<double>(2,0) !=0){
         std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
         return false;
     }
 
-    /*Fill local variables with input data*/
-    cameraMatrix.K = intrinsics;                  //Matrix K (3x3)
-    cameraMatrix.distCoef = cameraDistCoeffs;     //Distortion coefficients (1x5)
-    cameraMatrix.invK = inverse(intrinsics);      //Inverse matrix K
-    cameraMatrix.fx = intrinsics.at<float>(0,0);  //Focal length in x
-    cameraMatrix.fy = intrinsics.at<float>(1,1);  //Focal length in y
-    cameraMatrix.cx = intrinsics.at<float>(0,2);  //Center image in x
-    cameraMatrix.cy = intrinsics.at<float>(1,2);  //Center image in y
+    double fx = intrinsics.at<double>(0,0);
+    double fy = intrinsics.at<double>(1,1);
+    double cx = intrinsics.at<double>(0,2);
+    double cy = intrinsics.at<double>(1,2);
 
-    std::cout << "Camera matrix:" << "\n" << intrinsics << std::endl;
+    cv::Mat_<double> cam_matrix = (cv::Mat_<double>(3, 3) << fx, 0, cx,
+                                                             0, fy, cy,
+                                                             0,  0,  1);
+
+    double k1 = cameraDistCoeffs.at<double>(0,0);
+    double k2 = cameraDistCoeffs.at<double>(0,1);
+    double k3 = cameraDistCoeffs.at<double>(0,2);
+    double p1 = cameraDistCoeffs.at<double>(0,3);
+    double p2 = cameraDistCoeffs.at<double>(0,4);
+
+    cv::Mat_<double> distortionC = (cv::Mat_<double>(1, 5) << k1, k2, k3, p1, p2);
+
+    /*Fill local variables with input data*/
+    cameraMatrix.K = cam_matrix;                  //Matrix K (3x3)
+    cameraMatrix.distCoef = distortionC;     //Distortion coefficients (1x5)
+
+    std::cout << "Camera matrix:" << "\n" << cameraMatrix.K << std::endl;
     std::cout <<"Distortion coefficients: "<< std::endl;
-    std::cout << cameraDistCoeffs << std::endl;
+    std::cout << cameraMatrix.distCoef << std::endl;
 
     if(cameraMatrix.K.empty()){
-        std::cerr << "Could not load local variables with camera calibration file data" << std::endl;
+        std::cout << "Could not load local variables with camera calibration file data" << std::endl;
         return false;
-    }else{
-        return true;
     }
+
+    return true;
 }
 
 //===============================================
 // Extract feature
 //===============================================
-bool StructFromMotion::extractFeature(){
+void StructFromMotion::extractFeature(){
 
-  std::cout << "Getting features from all images..." << std::endl;
-  nFeatureImages.resize(nImages.size());
+  std::cout << "Extracting features from all images..." << std::endl;
+  nCameraPoses.resize(mGrayImages.size());
+  imagesKeypoints.resize(mGrayImages.size(),std::vector<cv::KeyPoint>());
+  imagesDescriptors.resize(mGrayImages.size(),cv::Mat());
+  imagesPts2D.resize(mGrayImages.size(),std::vector<cv::Point2d>());
 
-  for(size_t n=0;n<nImages.size();n++){
+  if(detector == 1){
+      std::cout << "No detector choose. Using default:" << "SIFT(Scale-Invariant Feature Transform) detector."
+                << "\n" << "Parameters:" << "\n" << "nFeatures = 0\n" << "nOctaveLayers = 3\n"
+                << "contrastThreshold = 0.04\n" << "edgeThreshold = 10\n" << "sigma = 1.6"  << std::endl;
+  }else if(detector == 2){
+      std::cout << "AKAZE detector choose." << std::endl;
+  }else if(detector == 3){
+      std::cout << "ORB detector choose." << std::endl;
+  }
 
-      nFeatureImages[n] = getFeature(nImages[n]);
-      Feature ft = nFeatureImages[n];
-      std::cout << "Image:" << n << " --> " << ft.pt2D.size() << " keypoints" << std::endl;
+  std::cout << "*-- Features --*" << std::endl;
+  cv::namedWindow("Image kps",CV_WINDOW_NORMAL);
+  cv::resizeWindow("Image kps",640,480);
+
+  for(size_t n=0;n<mGrayImages.size();n++){
+
+      const cv::Mat image = mGrayImages.at(n);
+      getFeature(image,n);
+      std::cout << "Image:" << n << " --> " << imagesKeypoints.at(n).size() << " kps" << std::endl;
+      cv::Mat imageKps;
+      cv::drawKeypoints(image,imagesKeypoints.at(n),imageKps,cv::Scalar::all(-1),0);
+      cv::rectangle(imageKps,cv::Point(10,imageKps.rows-25),cv::Point(70,imageKps.rows-5),
+                    cv::Scalar(0,255,0),CV_FILLED);
+      cv::putText(imageKps, "Image" + std::to_string(n),
+                  cv::Point(10,imageKps.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
+      cv::imshow("Image kps",imageKps);
+      cv::waitKey(100);
+
    }
-
-  if(nFeatureImages.empty()){return false;}
-  return true;
+  cv::destroyAllWindows();
+  //cv::destroyWindow("Image kps");
 }
 
 //===============================================
 //Get Feature
 //===============================================
-Feature StructFromMotion::getFeature(const cv::Mat& image){
+void StructFromMotion::getFeature(const cv::Mat& image,const int& numImage){
 
-    Feature feature;
-    detector->detect(image,feature.kps);
-    detector->compute(image,feature.kps,feature.descriptors);
-    keypoints2F(feature.kps,feature.pt2D);
-    return feature;
+  while(true){
+
+    if(detector == 1){
+
+      int nfeatures=0;
+      int nOctaveLayers=3;
+      double contrastThreshold=0.04;
+      double edgeThreshold=10;
+      double sigma=1.6;
+
+      cv::Ptr<cv::Feature2D> sift = cv::xfeatures2d::SIFT::create(nfeatures,nOctaveLayers,
+                                                                  contrastThreshold,edgeThreshold,sigma);
+
+      std::vector<cv::KeyPoint> kps;
+      cv::Mat descriptors;
+      sift->detectAndCompute(image,cv::noArray(),kps,descriptors,false);
+
+      std::vector<cv::Point2d> points2d;
+      keypointstoPoints(kps,points2d);
+
+      imagesKeypoints[numImage]= kps;
+      imagesDescriptors[numImage]=descriptors;
+      imagesPts2D[numImage]=points2d;
+
+      break;
+
+    }else if(detector == 2){
+
+        int descriptor_type = cv::AKAZE::DESCRIPTOR_MLDB;
+        int descriptor_size = 0;
+        int descriptor_channels = 3;
+        float threshold = 0.001f;
+        int nOctaves = 4;
+        int nOctaveLayers = 4;
+        int diffusivity = cv::KAZE::DIFF_PM_G2;
+
+        cv::Ptr<cv::AKAZE> akaze= cv::AKAZE::create(descriptor_type,descriptor_size,
+                                                       descriptor_channels,threshold,nOctaves,
+                                                       nOctaveLayers,diffusivity);
+
+        std::vector<cv::KeyPoint> kps;
+        cv::Mat descriptors;
+        akaze->detectAndCompute(image,cv::noArray(),kps,descriptors,false);
+
+        std::vector<cv::Point2d> points2d;
+        keypointstoPoints(kps,points2d);
+
+        imagesKeypoints[numImage]= kps;
+        imagesDescriptors[numImage]=descriptors;
+        imagesPts2D[numImage]=points2d;
+
+        break;
+
+    }else if(detector == 3){
+
+        int nfeatures = 500;
+        float scaleFactor = 1.2f;
+        int nlevels = 8;
+        int edgeThreshold = 31;
+        int firstLevel = 0;
+        int WTA_K = 2;
+        int scoreType = cv::ORB::HARRIS_SCORE;
+        int patchSize = 31;
+        int fastThreshold = 20;
+
+        cv::Ptr<cv::ORB> detector= cv::ORB::create(nfeatures,scaleFactor,nlevels,edgeThreshold,firstLevel,
+                                                   WTA_K,scoreType,patchSize,fastThreshold);
+
+        std::vector<cv::KeyPoint> kps;
+        cv::Mat descriptors;
+        detector->detectAndCompute(image,cv::noArray(),kps,descriptors,false);
+
+        std::vector<cv::Point2d> points2d;
+        keypointstoPoints(kps,points2d);
+
+        imagesKeypoints[numImage]= kps;
+        imagesDescriptors[numImage]=descriptors;
+        imagesPts2D[numImage]=points2d;
+
+        break;
+
+    }else{
+
+        std::cout << "No feature detector choose." << std::endl;
+        break;
+    }
+  }
 }
 
 //===============================================
 //FUNCTION: KEYPOINTS TO POINTS2D
 //===============================================
-void StructFromMotion::keypoints2F(Keypoints& keypoints, Points2f& points2D){
+void StructFromMotion::keypointstoPoints(Keypoints& keypoints, Points2d& points2D){
 
   points2D.clear();
-  for(const auto& kps: keypoints){
-         points2D.push_back(kps.pt);
+  for(const cv::KeyPoint& kp: keypoints){
+         points2D.push_back(kp.pt);
    }
 }
 
 //===============================================
 //FUNCTION: BASE RECONSTRUCTION
 //===============================================
-bool StructFromMotion::baseTriangulation(){
+bool StructFromMotion::baseReconstruction(){
 
-  std::map<float,std::pair<int,int>> bestViews = findBestPair();
+  std::map<int,std::pair<int,int>> bestViews = findBestPair();
+  if(bestViews.size() <= 0){
+     std::cout << "Could not obtain a good pair for baseline reconstruction." << std::endl;
+     return false;
+  }
 
-  for(std::pair<const float,std::pair<int,int>>& bestpair : bestViews){
+  cv::namedWindow("Best pair matching",cv::WINDOW_NORMAL);
+  cv::resizeWindow("Best pair matching",640*2,480);
+
+  for(std::pair<const int,std::pair<int,int>>& bestpair : bestViews){
 
       int queryImage = bestpair.second.first;
       int trainImage = bestpair.second.second;
 
-      //Matching bestMatch = getMatching(nFeatureImages[queryImage],nFeatureImages[trainImage]);
-
       Matching bestMatch;
-      MatchFeatures(queryImage,trainImage,&bestMatch);
+      getMatching(queryImage,trainImage,&bestMatch);
 
       std::cout << "Best pair:" << "["<< queryImage << "," << trainImage<<"]" << " has:"
                 << bestMatch.size() << " matches" << " and " << bestpair.first << " inliers." << std::endl;
 
-      cv::Matx34f Pleft  = cv::Matx34f::eye();
-      cv::Matx34f Pright = cv::Matx34f::eye();
+      cv::Matx34d Pleft  = cv::Matx34d::eye();
+      cv::Matx34d Pright = cv::Matx34d::eye();
 
-      std::cout << "Estimating camera pose with Essential Matrix..." << std::flush;
-      bool success = getCameraPose(cameraMatrix,bestMatch,nFeatureImages[queryImage],
-                                   nFeatureImages[trainImage],Pleft,Pright);
+      std::cout << "Estimating camera pose with Essential Matrix..." << std::endl;
+      bool success = getCameraPose(cameraMatrix,queryImage,trainImage,bestMatch,imagesPts2D.at(queryImage),
+                                   imagesPts2D.at(trainImage),Pleft,Pright);
 
-      if(not success){
-         std::cout << "[X]" << std::endl;
+      if(not success){      
          std::cerr << "Failed. stereo view could not be obtained " << queryImage << "," << trainImage
                    << ", something wrong." << std::endl;
          continue;
@@ -297,24 +429,24 @@ bool StructFromMotion::baseTriangulation(){
                 << trainImage << std::endl;
 
       cv::Mat matchImage;
-      cv::destroyWindow("Matching pairs");
-      cv::drawMatches(nImages[queryImage],nFeatureImages[queryImage].kps,nImages[trainImage],
-                      nFeatureImages[trainImage].kps,bestMatch,matchImage,
+      cv::drawMatches(mGrayImages.at(queryImage),imagesKeypoints.at(queryImage),mGrayImages.at(trainImage),
+                      imagesKeypoints.at(trainImage),bestMatch,matchImage,
                       cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),2);
-      cv::namedWindow("Best pair matching",cv::WINDOW_NORMAL);
-      cv::resizeWindow("Best pair matching",matchImage.cols,matchImage.rows);
-      cv::putText(matchImage, "Image " + std::to_string(queryImage) + "                        "+
-                  "                     "+  "                     " + + "          " +
-                  "Image" + std::to_string(trainImage),
-                  cv::Point(10,matchImage.rows-10),cv::FONT_ITALIC,0.5,cv::Scalar(0,255,0),1);
-      cv::moveWindow("Best pair matching",700,0);
+      cv::rectangle(matchImage,cv::Point(10,matchImage.rows-25),cv::Point(70,matchImage.rows-5),
+                    cv::Scalar(0,255,0),CV_FILLED);
+      cv::putText(matchImage, "Image" + std::to_string(queryImage),
+                  cv::Point(10,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
+      cv::rectangle(matchImage,cv::Point(670,matchImage.rows-25),cv::Point(730,matchImage.rows-5),
+                    cv::Scalar(0,255,0),CV_FILLED);
+      cv::putText(matchImage, "Image" + std::to_string(trainImage),
+                  cv::Point(670,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
       cv::imshow("Best pair matching", matchImage);
-      cv::waitKey(0);
-      cv::destroyWindow("Best pair matching");
+      cv::waitKey(500);
+      cv::destroyAllWindows();
 
       std::vector<Point3D> pointcloud;
 
-      success = triangulateViews(nFeatureImages[queryImage],nFeatureImages[trainImage],
+      success = triangulateViews(imagesPts2D.at(queryImage),imagesPts2D.at(trainImage),
                                  Pleft,Pright,bestMatch,cameraMatrix,
                                  std::make_pair(queryImage,trainImage),pointcloud);
 
@@ -337,101 +469,155 @@ bool StructFromMotion::baseTriangulation(){
 
       break;
   }  
-  adjustCurrentBundle();
+
+  //adjustCurrentBundle();
   return true;
 }
 
 //===============================================
 //BEST PAIR FOR BASELINE
 //===============================================
-std::map<float,std::pair<int,int>>  StructFromMotion::findBestPair(){
+std::map<int,std::pair<int,int>>  StructFromMotion::findBestPair(){
 
-  std::cout << "Getting best two views for baseline..." << std::flush;
-  std::map<float,std::pair<int,int>> numInliers;
+  std::cout << "Getting best two views for baseline..." << std::endl;
+  std::map<int,std::pair<int,int>> numInliers;
   const size_t numImg = nImages.size();
+
+  cv::namedWindow("Matching pairs",CV_WINDOW_NORMAL);
+  cv::resizeWindow("Matching pairs",640*2,480);
 
   for(int queryImage=0;queryImage<numImg-1;queryImage++) {
      for(int trainImage=queryImage+1;trainImage<numImg;trainImage++){
 
-        //Matching correspondences = getMatching(nFeatureImages[queryImage],nFeatureImages[trainImage]);
+        Matching correspondences;
+        getMatching(queryImage,trainImage,&correspondences);  
 
-        std::vector<cv::DMatch> correspondences;
-        MatchFeatures(queryImage,trainImage,&correspondences);
-
-        Feature alignedQ,alignedT;
-        AlignedPointsFromMatch(nFeatureImages[queryImage],nFeatureImages[trainImage],correspondences,
-                               alignedQ,alignedT);
-        //0.004 * maxVal
+        if(correspondences.size()<120) continue;
 
         cv::Mat matchImage;
-        cv::drawMatches(nImages[queryImage],nFeatureImages[queryImage].kps,nImages[trainImage],
-                        nFeatureImages[trainImage].kps,correspondences,matchImage,
-                        cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),2);
-
-        cv::namedWindow("Matching pairs",cv::WINDOW_NORMAL);
-        cv::resizeWindow("Matching pairs",matchImage.cols,matchImage.rows);
-        cv::moveWindow("Matching pairs",700,0);
-        cv::putText(matchImage, "Image" + std::to_string(queryImage)+ "                        "+
-                    "                     " +  "                     " + "     " +
-                    +" Image" + std::to_string(trainImage),
-                     cv::Point(10,matchImage.rows-10),cv::FONT_ITALIC,0.5,cv::Scalar(0,255,0),1);
+        cv::drawMatches(mGrayImages[queryImage],imagesKeypoints.at(queryImage),mGrayImages[trainImage],
+                        imagesKeypoints.at(trainImage),correspondences,matchImage,
+                        cv::Scalar(255, 0, 0), cv::Scalar(0, 255, 255));
+        cv::rectangle(matchImage,cv::Point(10,matchImage.rows-25),cv::Point(70,matchImage.rows-5),
+                      cv::Scalar(0,255,0),CV_FILLED);
+        cv::putText(matchImage, "Image" + std::to_string(queryImage),
+                    cv::Point(10,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
+        cv::rectangle(matchImage,cv::Point(670,matchImage.rows-25),cv::Point(730,matchImage.rows-5),
+                      cv::Scalar(0,255,0),CV_FILLED);
+        cv::putText(matchImage, "Image" + std::to_string(trainImage),
+                    cv::Point(670,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
         cv::imshow("Matching pairs", matchImage);
-        cv::waitKey(1);
+        cv::waitKey(100);
 
-        if(correspondences.size()<30) continue;
-        int N = findHomographyInliers(nFeatureImages[queryImage],nFeatureImages[trainImage],
-                                                   correspondences);
+        int numHomInli = findHomographyInliers(queryImage,trainImage,correspondences);
+        //int percent = (int)(((double)numHomInli) / ((double)correspondences.size()) * 100.0);
 
-        if(N < 60) continue;
+        //if(numHomInli < 60) continue;
 
-        float poseInliersRatio = (float)N/(float)correspondences.size();
-        std::cout << "pair:" << "[" << queryImage << "," << trainImage << "]" << " has:" << poseInliersRatio
+        //float poseInliersRatio = (float)numHomInli / (float)correspondences.size();
+        std::cout << "pair:" << "[" << queryImage << "," << trainImage << "]" << " has:" << numHomInli
                   << " pose inliers ratio."<< std::endl;
 
-        numInliers[poseInliersRatio]=std::make_pair(queryImage,trainImage);
+        numInliers[numHomInli]=std::make_pair(queryImage,trainImage);
      }
   }
+  cv::destroyAllWindows();
+  //cv::destroyWindow("Matching pairs");
   return numInliers;
 }
 
 //===============================================
 //FUNCTION: FEATURE MATCHING
 //===============================================
-Matching StructFromMotion::getMatching(const Feature& queryImage,const Feature& trainImage){
+void StructFromMotion::getMatching(const int& idx_query,const int& idx_train,Matching* goodMatches){
 
   /*Knn matching*/
-  Matching goodMatches;
-  std::vector<Matching> initialMatching;
-  matcher->knnMatch(queryImage.descriptors,trainImage.descriptors,initialMatching,2);
+  cv::BFMatcher* matcher = new cv::BFMatcher(cv::NORM_L2, false);
+  //std::vector<cv::KeyPoint> query_kps = imagesKeypoints.at(idx_query);
+  //std::vector<cv::KeyPoint> train_kps = imagesKeypoints.at(idx_train);
+  std::vector<std::vector<cv::DMatch>> knnMatches;
+  cv::Mat query_descriptor = imagesDescriptors.at(idx_query);
+  cv::Mat train_descriptor = imagesDescriptors.at(idx_train);
+  matcher->knnMatch(query_descriptor,train_descriptor,knnMatches,2);
 
   /*RATIO-TEST FILTER*/
-  for(unsigned i = 0; i < initialMatching.size(); i++) {
-      if(initialMatching[i][0].distance <= NN_MATCH_RATIO * initialMatching[i][1].distance) {
-          goodMatches.push_back(initialMatching[i][0]);
+
+  for(unsigned i = 0; i < knnMatches.size(); i++) {
+      if(knnMatches[i][0].distance <= NN_MATCH_RATIO * knnMatches[i][1].distance) {
+          goodMatches->push_back(knnMatches[i][0]);
+      }
+  }
+}
+
+void StructFromMotion::prunedMatchingWithHomography(const int& idx_query, const int& idx_train,
+                                                    const Matching& goodMatches,Matching* prunedMatch){
+
+  std::vector<cv::KeyPoint> matched1,matched2;
+  std::vector<cv::KeyPoint> query_kps = imagesKeypoints.at(idx_query);
+  std::vector<cv::KeyPoint> train_kps = imagesKeypoints.at(idx_train);
+
+  for(unsigned i = 0; i < goodMatches.size(); i++) {
+      matched1.push_back(query_kps[goodMatches[i].queryIdx]);
+      matched2.push_back(train_kps[goodMatches[i].trainIdx]);
+  }
+
+  std::vector<cv::Point2d> query_points,train_points;
+  keypointstoPoints(matched1,query_points);
+  keypointstoPoints(matched2,train_points);
+
+  /*RANSAC FILTER*/
+  const double ransac_thresh = 2.5;
+  cv::Mat inliers_mask, homography;
+  //std::vector<cv::KeyPoint> inliers1, inliers2;
+
+  if(matched1.size() >= 4){
+     homography = cv::findHomography(query_points,train_points,CV_RANSAC, ransac_thresh, inliers_mask);
+  }
+
+  for(unsigned i = 0; i < matched1.size(); i++) {
+      if(inliers_mask.at<uchar>(i)) {
+          //int new_i = static_cast<int>(inliers1.size());
+          //inliers1.push_back(matched1[i]);
+          //inliers2.push_back(matched2[i]);
+          //goodMatches->push_back(cv::DMatch(new_i, new_i, 0));
+          prunedMatch->push_back(goodMatches[i]);
       }
   }
 
-  return goodMatches;
+  /*
+  imagesKeypoints.at(idx_query).clear();
+  imagesKeypoints.at(idx_train).clear();
+  imagesKeypoints.at(idx_query) = inliers1;
+  imagesKeypoints.at(idx_train) = inliers2;
+  */
+  /*
+  cv::Mat res;
+  cv::drawMatches(mGrayImages.at(idx_query), inliers1, mGrayImages.at(idx_train), inliers2,
+              goodMatches, res,
+              cv::Scalar(255, 0, 0), cv::Scalar(255, 0, 0));
+  cv::imshow("Good matches",res);
+  cv::waitKey(0);
+  */
+
 }
 
 //===============================================
 //FUNCTION: FIND HOMOGRAPHY INLIERS
 //===============================================
-int StructFromMotion::findHomographyInliers(const Feature& queryFeature,const Feature& trainFeature,const Matching& matches){
+int StructFromMotion::findHomographyInliers(const int& idx_query,const int& idx_train,const Matching& matches){
 
-  Feature alignedQuery,alignedTrain;
-  AlignedPointsFromMatch(queryFeature,trainFeature,matches,alignedQuery,alignedTrain);
+  std::vector<cv::Point2d> query_points;
+  std::vector<cv::Point2d> train_points;
+  AlignedPointsFromMatch(imagesPts2D.at(idx_query),imagesPts2D.at(idx_train),matches,query_points,train_points);
 
   double minVal,maxVal;
-  cv::minMaxIdx(alignedQuery.pt2D,&minVal,&maxVal);
+  cv::minMaxIdx(query_points,&minVal,&maxVal);
 
   cv::Mat matrixH(3,3,CV_32FC3);
   cv::Mat inliersMask;
-
   //0.004 * maxVal
 
-  matrixH = cv::findHomography(alignedQuery.pt2D,alignedTrain.pt2D,CV_RANSAC,
-                               10.0,inliersMask);
+  matrixH = cv::findHomography(query_points,train_points,CV_RANSAC,10.0,inliersMask);
 
   int numInliers = cv::countNonZero(inliersMask);
   return numInliers;
@@ -440,28 +626,29 @@ int StructFromMotion::findHomographyInliers(const Feature& queryFeature,const Fe
 //===============================================
 //FUNCTION: ALIGNED POINTS
 //===============================================
-void StructFromMotion::AlignedPointsFromMatch(const Feature& queryImg,const Feature& trainImg,const Matching& matches,Feature& alignedL,Feature& alignedR){
+void StructFromMotion::AlignedPointsFromMatch(const Points2d& queryImg,const Points2d& trainImg,const Matching& matches,Points2d& alignedL,Points2d& alignedR){
 
    std::vector<int> leftId,rightId;
    AlignedPoints(queryImg,trainImg,matches,alignedL,alignedR,leftId,rightId);  
 }
 
-void StructFromMotion::AlignedPoints(const Feature& queryImg,const Feature& trainImg,const Matching& matches, Feature& alignedL, Feature& alignedR,std::vector<int>& idLeftOrigen,std::vector<int>& idRightOrigen){
+void StructFromMotion::AlignedPoints(const Points2d& queryImg,const Points2d& trainImg,const Matching& matches, Points2d& alignedL, Points2d& alignedR,std::vector<int>& idLeftOrigen,std::vector<int>& idRightOrigen){
 
       //align left and right point sets
       for(unsigned int i=0;i<matches.size();i++){
 
-        alignedL.pt2D.push_back(queryImg.pt2D[matches[i].queryIdx]);
-        alignedR.pt2D.push_back(trainImg.pt2D[matches[i].trainIdx]);
+        alignedL.push_back(queryImg[matches[i].queryIdx]);
+        alignedR.push_back(trainImg[matches[i].trainIdx]);
 
         idLeftOrigen.push_back(matches[i].queryIdx);
         idRightOrigen.push_back(matches[i].trainIdx);
       }
 }
 
-bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching & matches,
-                                     const Feature& left, const Feature& right,
-                                     cv::Matx34f& Pleft, cv::Matx34f& Pright){
+bool StructFromMotion::getCameraPose(const Intrinsics& intrinsics,const int& idx_query,const int& idx_train,
+                                     const Matching & matches,
+                                     const Points2d& left, const Points2d& right,
+                                     cv::Matx34d& Pleft, cv::Matx34d& Pright){
 
   if (intrinsics.K.empty()) {
 
@@ -469,18 +656,25 @@ bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching
       return false;
   }
 
-  Feature alignedLeft,alignedRight;
-  AlignedPointsFromMatch(left,right,matches,alignedLeft,alignedRight);
+  Matching prunedMatches;
+  prunedMatchingWithHomography(idx_query,idx_train,matches,&prunedMatches);
+
+  Points2d alignedLeft,alignedRight;
+  AlignedPointsFromMatch(left,right,prunedMatches,alignedLeft,alignedRight);
 
   // ESSENTIAL MATRIX
   cv::Mat mask;
-  cv::Mat E = cv::findEssentialMat(alignedLeft.pt2D, alignedRight.pt2D,
+  cv::Mat E = cv::findEssentialMat(alignedLeft, alignedRight,
                                    intrinsics.K,CV_RANSAC,0.999, 1.0,mask);
 
   // CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
   cv::Mat R,T;
-  cv::Point2d pp = cv::Point2d(intrinsics.cx,intrinsics.cy);
-  cv::recoverPose(E,alignedLeft.pt2D, alignedRight.pt2D,R,T,intrinsics.fx,pp,mask);
+  double fx = intrinsics.K.at<double>(0,0);
+  double cx = intrinsics.K.at<double>(0,2);
+  double cy = intrinsics.K.at<double>(1,2);
+  cv::Point2d pp = cv::Point2d(cx,cy);
+
+  cv::recoverPose(E,alignedLeft, alignedRight,R,T,fx,pp,mask);
 
   bool success = CheckCoherentRotation(R);
 
@@ -490,14 +684,24 @@ bool StructFromMotion::getCameraPose(const CameraData& intrinsics,const Matching
       return false;
   }
 
+  std::cout << "R:<\n" << R << std::endl;
+  std::cout << "T:\n" << T << std::endl;
+
+  Pright = cv::Matx34d(R.at<double>(0,0),R.at<double>(0,1),R.at<double>(0,2),T.at<double>(0),
+                       R.at<double>(1,0),R.at<double>(1,1),R.at<double>(1,2),T.at<double>(1),
+                       R.at<double>(2,0),R.at<double>(2,1),R.at<double>(2,2),T.at<double>(2));
+
+  Pleft  = cv::Matx34d::eye();
+
+  /*
   //Rotational element in a 3x4 matrix
   const cv::Rect ROT(0, 0, 3, 3);
   //Translational element in a 3x4 matrix
   const cv::Rect TRA(3, 0, 1, 3);
-
-  Pleft  = cv::Matx34f::eye();
   R.copyTo(cv::Mat(3, 4, CV_32FC1, Pright.val)(ROT));
   T.copyTo(cv::Mat(3, 4, CV_32FC1, Pright.val)(TRA));
+  */
+  std::cout << "PRIGHT:\n" << Pright << std::endl;
 
   return success;
 }
@@ -518,80 +722,76 @@ bool StructFromMotion::CheckCoherentRotation(cv::Mat& R){
 //===============================================
 //FUNCTION: TRIANGULATE VIEWS
 //===============================================
-bool StructFromMotion::triangulateViews(const Feature& query,const Feature& train,const cv::Matx34f& P1,const cv::Matx34f& P2,const Matching& matches,const CameraData& matrixK,const std::pair<int,int>& pair,std::vector<Point3D>& pointcloud){
+bool StructFromMotion::triangulateViews(const Points2d& query,const Points2d& train,const cv::Matx34d& P1,const cv::Matx34d& P2,const Matching& matches,const Intrinsics& matrixK,const std::pair<int,int>& pair,std::vector<Point3D>& pointcloud){
 
   std::cout << "** IMAGE COORDINATE - CAMERA COORDINATE CONVERTION **" << std::endl;
 
   pointcloud.clear();
 
-  Feature alignedQuery,alignedTrain;
+  Points2d alignedQuery,alignedTrain;
   std::vector<int> leftBackReference,rightBackReference;
   AlignedPoints(query,train,matches,alignedQuery,alignedTrain,
                                   leftBackReference,rightBackReference);
 
   // NORMALIZE IMAGE COORDINATE TO CAMERA COORDINATE (pixels --> metric)
-  std::cout << "Normalizing points..." << std::flush;
+  std::cout << "Normalizing points..." << std::endl;
   cv::Mat normalizedLeftPts,normalizedRightPts;
-  cv::undistortPoints(alignedQuery.pt2D, normalizedLeftPts, matrixK.K,matrixK.distCoef);
-  cv::undistortPoints(alignedTrain.pt2D, normalizedRightPts, matrixK.K, matrixK.distCoef);
-  std::cout << "[DONE]" << std::endl;
+  cv::undistortPoints(alignedQuery, normalizedLeftPts, matrixK.K,matrixK.distCoef);
+  cv::undistortPoints(alignedTrain, normalizedRightPts, matrixK.K, matrixK.distCoef);
 
   // TRIANGULATE POINTS
-  std::cout << "Triangulating points..." << std::flush;
+  std::cout << "Triangulating points..." << std::endl;
   cv::Mat pts3dHomogeneous;
   cv::triangulatePoints(P1,P2,normalizedLeftPts,normalizedRightPts,pts3dHomogeneous);
-  std::cout << "[DONE]" << std::endl;
 
   std::cout << "** CAMERA COORDINATE - WORLD COORDINATE CONVERTION **" << std::endl;
 
   // CONVERTION CAMERA COORDINATE - WORLD COORDINATE
-  std::cout << "Converting points to world coordinate..." << std::flush;
+  std::cout << "Converting points to world coordinate..." << std::endl;
   cv::Mat pts3d;
   cv::convertPointsFromHomogeneous(pts3dHomogeneous.t(),pts3d);
-  std::cout << "[DONE]" << std::endl;
 
   cv::Mat rvecLeft;
   cv::Rodrigues(P1.get_minor<3,3>(0,0),rvecLeft);
   cv::Mat tvecLeft(P1.get_minor<3,1>(0,3));
 
-  Points2f projectedLeft(alignedQuery.pt2D.size());
+  Points2d projectedLeft(alignedQuery.size());
   cv::projectPoints(pts3d,rvecLeft,tvecLeft,matrixK.K,matrixK.distCoef,projectedLeft);
 
   cv::Mat rvecRight;
   cv::Rodrigues(P2.get_minor<3,3>(0,0),rvecRight);
   cv::Mat tvecRight(P2.get_minor<3,1>(0,3));
 
-  Points2f projectedRight(alignedTrain.pt2D.size());
+  Points2d projectedRight(alignedTrain.size());
   cv::projectPoints(pts3d,rvecRight,tvecRight,matrixK.K,matrixK.distCoef,projectedRight);
 
-  std::cout << "Creating a pointcloud vector..." << std::flush;
-  const float MIN_REPROJECTION_ERROR = 8.0f; //Maximum 10-pixel allowed re-projection error
+  std::cout << "Creating a pointcloud vector..." << std::endl;
+  const float MIN_REPROJECTION_ERROR = 8.0; //Maximum 10-pixel allowed re-projection error
 
   for(int i = 0; i < pts3d.rows; i++){
 
       //check if point reprojection error is small enough
 
-      const float queryError = cv::norm(projectedLeft[i]  - alignedQuery.pt2D[i]);
-      const float trainError = cv::norm(projectedRight[i] - alignedTrain.pt2D[i]);
+      const float queryError = cv::norm(projectedLeft[i]  - alignedQuery[i]);
+      const float trainError = cv::norm(projectedRight[i] - alignedTrain[i]);
 
       if(MIN_REPROJECTION_ERROR < queryError or
          MIN_REPROJECTION_ERROR < trainError) continue;
 
           Point3D p;
-          p.pt = cv::Point3f(pts3d.at<float>(i, 0),
-                             pts3d.at<float>(i, 1),
-                             pts3d.at<float>(i, 2));
+          p.pt = cv::Point3d(pts3d.at<double>(i, 0),
+                             pts3d.at<double>(i, 1),
+                             pts3d.at<double>(i, 2));
 
           //use back reference to point to original Feature in images
           p.idxImage[pair.first]  = leftBackReference[i];
           p.idxImage[pair.second] = rightBackReference[i];
-          p.pt2D[pair.first]=nFeatureImages[pair.first].pt2D[leftBackReference[i]];
-          p.pt2D[pair.second]=nFeatureImages[pair.second].pt2D[rightBackReference[i]];
+          p.pt2D[pair.first]=imagesPts2D.at(pair.first).at(leftBackReference[i]);
+          p.pt2D[pair.second]=imagesPts2D.at(pair.second).at(rightBackReference[i]);
 
           pointcloud.push_back(p);
   }
 
-  std::cout << "[DONE]" << std::endl;
   std::cout << "New triangulated points: " << pointcloud.size() << " 3d pts" << std::endl;
   return true;
 }
@@ -602,7 +802,7 @@ bool StructFromMotion::triangulateViews(const Feature& query,const Feature& trai
 void StructFromMotion::adjustCurrentBundle() {
 
   std::cout << "Bundle adjuster..." << std::endl;
-  BundleAdjustment::adjustBundle(nReconstructionCloud,nCameraPoses,cameraMatrix,nFeatureImages);
+  //BundleAdjustment::adjustBundle(nReconstructionCloud,nCameraPoses,cameraMatrix,nFeatureImages);
 
 }
 
@@ -611,17 +811,52 @@ void StructFromMotion::adjustCurrentBundle() {
 //===============================================
 bool StructFromMotion::addMoreViews(){
 
-      std::vector<cv::Point3f> points3D;
-      std::vector<cv::Point2f> points2D;
+      std::vector<cv::Point3d> points3D;
+      std::vector<cv::Point2d> points2D;
 
-      for(int NEW_VIEW = 0;NEW_VIEW<nImages.size();NEW_VIEW++){
+      std::set<int> newFrames;
+      for(int newViewstoAdd:nGoodViews){
+
+               int i;
+               int j;
+
+               if(newViewstoAdd==0){
+                   i=newViewstoAdd;
+                   j=newViewstoAdd+1;
+                 }else if(newViewstoAdd==nImages.size()){
+                   i=newViewstoAdd-1;
+                   j=newViewstoAdd;
+                 }else{
+                   i=newViewstoAdd -1;
+                   j=newViewstoAdd+1;
+                 }
+
+               if(nDoneViews.count(i)== 1){
+                   if(nDoneViews.count(j)== 1){
+                       continue;
+                     }else{
+                        newFrames.insert(j);
+                     }
+               }else{
+                   newFrames.insert(i);
+                   if(nDoneViews.count(j)== 1){
+                       continue;
+                    }else{
+                       newFrames.insert(j);
+                    }
+               }
+      }
+
+      for(int NEW_VIEW : newFrames){
+      //for(int NEW_VIEW = 0;NEW_VIEW<nImages.size();NEW_VIEW++){
 
           //if(nDoneViews.count(NEW_VIEW)==1) continue; //Skip done views
-          if(nDoneViews.find(NEW_VIEW)!=nDoneViews.end())continue;;
+          if(nDoneViews.find(NEW_VIEW)!=nDoneViews.end())continue;
 
           std::cout <<"\n"<< "===================================="<< std::endl;
           std::cout << "ESTIMATING MORE CAMERAS PROJECTION..." << std::endl;
           std::cout << "Extracting 2d3d correspondences..." << std::endl;
+          std::cout << "Possible view:" << " image --> " << NEW_VIEW << std::endl;
 
           Matching bestMatches;
           int DONE_VIEW;
@@ -631,7 +866,7 @@ bool StructFromMotion::addMoreViews(){
           nDoneViews.insert(NEW_VIEW);
 
           std::cout << "Estimating camera pose..." << std::endl;
-          cv::Matx34f newCameraPose = cv::Matx34f::eye();         
+          cv::Matx34d newCameraPose = cv::Matx34d::eye();
           bool success = findCameraPosePNP(cameraMatrix,points3D,points2D,newCameraPose);
 
           if(not success){
@@ -649,9 +884,9 @@ bool StructFromMotion::addMoreViews(){
           }else{
               queryImage = DONE_VIEW;
               trainImage = NEW_VIEW;
-          }
+          }        
 
-          bool good_triangulation = triangulateViews(nFeatureImages[queryImage],nFeatureImages[trainImage],
+          bool good_triangulation = triangulateViews(imagesPts2D.at(queryImage),imagesPts2D.at(trainImage),
                                                      nCameraPoses[queryImage],nCameraPoses[trainImage],
                                                      bestMatches,cameraMatrix,
                                                      std::make_pair(queryImage,trainImage),new_triangulated);
@@ -660,10 +895,11 @@ bool StructFromMotion::addMoreViews(){
             continue;
           }
 
-          std::cout << "before triangulation: " << nReconstructionCloud.size() << std::endl;;
+          std::cout << "Before triangulation: " << nReconstructionCloud.size() << std::endl;;
           mergeNewPoints(new_triangulated);         
-          std::cout << "after " << nReconstructionCloud.size() << std::endl;
-          adjustCurrentBundle() ;   
+          std::cout << "After triangulation: " << nReconstructionCloud.size() << std::endl;
+          nGoodViews.insert(NEW_VIEW);
+          adjustCurrentBundle();
       }
 
  std::cout << "\n"<< "=============================== " << std::endl;
@@ -677,8 +913,8 @@ bool StructFromMotion::addMoreViews(){
 //FUNCTION: FIND CORRESPONDENCES 2D-3D
 //===============================================
 void StructFromMotion::find2D3DMatches(const int& NEW_VIEW,
-                                       std::vector<cv::Point3f>& points3D,
-                                       std::vector<cv::Point2f>& points2D,Matching& bestMatches,int& DONEVIEW){
+                                       std::vector<cv::Point3d>& points3D,
+                                       std::vector<cv::Point2d>& points2D,Matching& bestMatches,int& DONEVIEW){
 
      points3D.clear(); points2D.clear();
      int queryImage,trainImage;
@@ -695,9 +931,11 @@ void StructFromMotion::find2D3DMatches(const int& NEW_VIEW,
              trainImage = NEW_VIEW;
          }
 
-         //const Matching match = getMatching(nFeatureImages[queryImage],nFeatureImages[trainImage]);
          Matching match;
-         MatchFeatures(queryImage,trainImage,&match);
+         getMatching(queryImage,trainImage,&match);
+         //const Matching match = matchingFor2D3D(queryImage,trainImage);
+         //Matching match;
+         //MatchFeatures(queryImage,trainImage,&match);
 
          int numMatches = match.size();
          if(numMatches > bestNumMatches) {
@@ -708,7 +946,6 @@ void StructFromMotion::find2D3DMatches(const int& NEW_VIEW,
      }
 
      bestMatches = bestMatch;
-
 
      //scan all cloud 3D points
      for(const Point3D& cloudPoint : nReconstructionCloud){
@@ -741,8 +978,8 @@ void StructFromMotion::find2D3DMatches(const int& NEW_VIEW,
                  if(matched2DPointInNewView >= 0){
 
                      //This point is matched in the new view
-                     const Feature& newViewFeatures = nFeatureImages[NEW_VIEW];
-                     points2D.push_back(newViewFeatures.pt2D[matched2DPointInNewView]);
+                     const Points2d& newViewFeatures = imagesPts2D[NEW_VIEW];
+                     points2D.push_back(newViewFeatures.at(matched2DPointInNewView));
                      points3D.push_back(cloudPoint.pt);
                      found2DPoint = true;
                      break;
@@ -801,7 +1038,7 @@ double StructFromMotion::determinante(cv::Mat& relativeRotationCam){
 //FUNCTION: FIND CAMERA POSE PNP RANSAC
 //===============================================
 
-bool StructFromMotion::findCameraPosePNP(const CameraData& intrinsics,const std::vector<cv::Point3f>& pts3D,const std::vector<cv::Point2f>& pts2D,cv::Matx34f& P){
+bool StructFromMotion::findCameraPosePNP(const Intrinsics& intrinsics,const std::vector<cv::Point3d>& pts3D,const std::vector<cv::Point2d>& pts2D,cv::Matx34d& P){
 
   if(pts3D.size() <= 7 || pts2D.size() <= 7 || pts3D.size() != pts2D.size()) {
 
@@ -856,6 +1093,11 @@ bool StructFromMotion::findCameraPosePNP(const CameraData& intrinsics,const std:
 
   std::cout << "found t = " << "\n"<< T << "\nR = \n" << R << std::endl;
 
+  P = cv::Matx34d(R.at<double>(0,0),R.at<double>(0,1),R.at<double>(0,2),T.at<double>(0),
+                  R.at<double>(1,0),R.at<double>(1,1),R.at<double>(1,2),T.at<double>(1),
+                  R.at<double>(2,0),R.at<double>(2,1),R.at<double>(2,2),T.at<double>(2));
+
+  /*
   //Rotational element in a 3x4 matrix
   const cv::Rect ROT(0, 0, 3, 3);
 
@@ -864,6 +1106,8 @@ bool StructFromMotion::findCameraPosePNP(const CameraData& intrinsics,const std:
 
   R.copyTo(cv::Mat(3, 4, CV_32FC1, P.val)(ROT));
   T.copyTo(cv::Mat(3, 4, CV_32FC1, P.val)(TRA));
+  */
+  std::cout << "new P:\n" << P << std::endl;
 
   return true;
 
@@ -871,7 +1115,7 @@ bool StructFromMotion::findCameraPosePNP(const CameraData& intrinsics,const std:
 
 void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud) {
 
-  std::cout << "Adding new points..." << std::flush;
+  std::cout << "Adding new points..." << std::endl;
 
   const float MERGE_CLOUD_POINT_MIN_MATCH_DISTANCE   = 0.01;
 //  const float MERGE_CLOUD_FEATURE_MIN_MATCH_DISTANCE = 20.0;
@@ -880,7 +1124,7 @@ void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud)
  //     size_t mergedPoints = 0;
 
       for(const Point3D& p : newPointCloud) {
-          const cv::Point3f newPoint = p.pt; //new 3D point
+          const cv::Point3d newPoint = p.pt; //new 3D point
 
           bool foundAnyMatchingExistingViews = false;
           bool foundMatching3DPoint = false;
@@ -900,25 +1144,7 @@ void StructFromMotion::mergeNewPoints(const std::vector<Point3D>& newPointCloud)
           }
       }
 
-      std::cout << "[DONE]" << std::endl;
       std::cout << "New points:" << newPoints << std::endl;
-}
-
-Matching StructFromMotion::matchingFor2D3D(Feature& feature1,Feature& feature2){
-
-  cv::Ptr<cv::DescriptorMatcher> matcherFlan = cv::DescriptorMatcher::create(2);
-  std::vector<cv::DMatch> matches12,matches21,buenosMatches;
-  matcherFlan ->match(feature1.descriptors,feature2.descriptors,matches12);
-  matcherFlan ->match(feature2.descriptors,feature1.descriptors,matches21);
-
-  for (size_t i=0; i < matches12.size(); i++){
-      cv::DMatch forward = matches12[i];
-      cv::DMatch backward = matches21[forward.trainIdx];
-      if(backward.trainIdx==forward.queryIdx){
-          buenosMatches.push_back(forward);
-      }
-  }
-  return buenosMatches;
 }
 
 void StructFromMotion::createPointsTxt(){
@@ -937,7 +1163,7 @@ void StructFromMotion::createPointsTxt(){
           }
 
           const int viewIdx = originatingView.first;
-          const cv::Point2f p2d = nFeatureImages[viewIdx].pt2D[originatingView.second];
+          const cv::Point2d p2d = imagesPts2D[viewIdx][originatingView.second];
 
           ofs << viewIdx << " " << p2d.x << " " << p2d.y << " ";
           cont +=1;
@@ -989,10 +1215,10 @@ void StructFromMotion::PMVS2(){
 
       std::sprintf(str, "denseCloud/txt/%04d.txt", (int)i);
       ofstream ofs(str);
-      cv::Matx34f pose = nCameraPoses[i];
+      cv::Matx34d pose = nCameraPoses[i];
 
       //K*P
-      pose = (cv::Matx33f)cameraMatrix.K*pose;
+      pose = (cv::Matx33d)cameraMatrix.K*pose;
 
       ofs << "CONTOUR" << std::endl;
       ofs << pose(0,0) << " " << pose(0,1) << " " << pose(0,2) << " " << pose(0,3) << "\n"
@@ -1069,7 +1295,8 @@ void StructFromMotion::create_mesh(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,pc
   pcl::concatenateFields (*cloud, *cloud_normals, *cloud_smoothed_normals);//x
 
   pcl::Poisson<pcl::PointNormal> poisson;
-  poisson.setDepth (9);//9
+
+  poisson.setDepth (12);//9
   poisson.setInputCloud (cloud_smoothed_normals);
   poisson.setPointWeight(4);//4
   //poisson.setDegree(5);
@@ -1130,7 +1357,8 @@ void StructFromMotion::optical_flow_feature_match(){
 }
 
 void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatch>* matches) {
-		std::vector<cv::Point2f> i_pts = nFeatureImages[idx_i].pt2D;
+/*
+  std::vector<cv::Point2f> i_pts = nFeatureImages[idx_i].pt2D;
 		//keypoints2F(nFeatureImages[idx_i].kps, nFeatureImages[i_pts].pt2D);
 
 		std::vector<cv::Point2f> j_pts(i_pts.size());
@@ -1169,8 +1397,8 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		cv::Mat j_pts_flat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
 
 		std::vector<std::vector<cv::DMatch> > knn_matches;
-		//FlannBasedMatcher matcher;
-		cv::BFMatcher matcher(CV_L2);
+		cv::FlannBasedMatcher matcher;
+		//cv::BFMatcher matcher(CV_L2);
 		matcher.radiusMatch(to_find_flat, j_pts_flat, knn_matches, 2.0f);
 		//Prune
 
@@ -1196,39 +1424,9 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 
 		}
 
-		std::cout << "pruned " << matches->size() << " / " << knn_matches.size() << " matches" << std::endl;
+		//std::cout << "pruned " << matches->size() << " / " << knn_matches.size() << " matches" << std::endl;
 
-		/*
-#if 0
-		{
-			// draw flow field
-			Mat img_matches; cvtColor(grey_imgs[idx_i], img_matches, CV_GRAY2BGR);
-			i_pts.clear(); j_pts.clear();
-			for (int i = 0; i < matches->size(); i++) {
-				//if (i%2 != 0) {
-				//				continue;
-				//			}
-				Point i_pt = imgpts[idx_i][(*matches)[i].queryIdx].pt;
-				Point j_pt = imgpts[idx_j][(*matches)[i].trainIdx].pt;
-				i_pts.push_back(i_pt);
-				j_pts.push_back(j_pt);
-				vstatus[i] = 1;
-			}
-			drawArrows(img_matches, i_pts, j_pts, vstatus, verror, Scalar(0, 255));
-			stringstream ss;
-			ss << matches->size() << " matches";
-			ss.clear(); ss << "flow_field_"<<idx_i<<"and"<<idx_j << ".png";//<< omp_get_thread_num()
-			imshow(ss.str(), img_matches);
 
-			//direct wirte
-			imwrite(ss.str(), img_matches);
-			//int c = waitKey(0);
-			//if (c == 's') {
-			//	imwrite(ss.str(), img_matches);
-			//}
-			destroyWindow(ss.str());
-		}
-#endif
 */
 }
 
