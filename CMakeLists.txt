@@ -2,12 +2,12 @@
 # CMAKE CONFIGURATION
 ##############################################################################
 cmake_minimum_required(VERSION 3.5.1 FATAL_ERROR)
-project(PercRoboticSystem3D VERSION 1.0.0)
+project(dendroMAP3DEstimation VERSION 1.0.0)
 
 set(CMAKE_BUILD_TYPE Debug)
 
 MESSAGE("\n" "=========================================")
-MESSAGE(" COMPILING PROJECT  ")
+MESSAGE("PROJECT ${PROJECT_NAME} ")
 MESSAGE("=========================================")
 
 # Find includes in corresponding build directories
@@ -22,21 +22,13 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # PACKAGES
 ##############################################################################
 MESSAGE("Finding packages...")
-set(OpenCV_Components core highgui features2d calib3d xfeatures2d)
+set(OpenCV_Components core highgui features2d xfeatures2d calib3d )
 find_package(OpenCV 3.4.1 REQUIRED PATHS ${OpenCV_DIR} COMPONENTS ${OpenCV_Components})
 if(OpenCV_FOUND )
     message(STATUS "OpenCV status:")
     message(STATUS "    version: ${OpenCV_VERSION}")
 else()
     message(FATAL_ERROR "    ERROR: OpenCV 4.0.0 not found")
-endif()
-
-find_package(Ceres REQUIRED)
-if(Ceres_FOUND )
-    message(STATUS "Ceres library status:")
-    message(STATUS "    version: ${CERES_VERSION}")
-    message(STATUS "    libraries: ${CERES_LIBRARIES}")
-    message(STATUS "    include path: ${CERES_INCLUDE_DIRS}")
 endif()
 
 include(include/Eigen/FindEigen.cmake) #Eigen include configuration file for PCL 1.8.1
@@ -49,12 +41,20 @@ else()
     message(FATAL_ERROR "    ERROR: Eigen not found")
 endif()
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.58.0 REQUIRED)
 if(Boost_FOUND )
     message(STATUS "Boost status:")
     message(STATUS "    version: ${Boost_VERSION}")
 else()
     message(FATAL_ERROR "    ERROR: Boost not found")
+endif()
+
+find_package(Ceres 1.13.0 REQUIRED)
+if(Ceres_FOUND )
+    message(STATUS "Ceres library status:")
+    message(STATUS "    version: ${CERES_VERSION}")
+    message(STATUS "    libraries: ${CERES_LIBRARIES}")
+    message(STATUS "    include path: ${CERES_INCLUDE_DIRS}")
 endif()
 
 set(PCL_Components common io visualization segmentation)
@@ -96,13 +96,16 @@ set(BUNDLE_HEADER "include/BundleAdjustment.h")
 set(BUNDLE_SOURCE "src/BundleAdjustment.cpp")
 set(SEGMENT_HEADER "include/Segmentation.h")
 set(SEGMENT_SOURCE "src/Segmentation.cpp")
+set(DENDROMETRY_HEADER "include/DendrometryE.h")
+set(DENDROMETRY_SOURCE "src/DendrometryE.cpp")
 set(MAIN_SOURCE "main.cpp")
 
 ##############################################################################
 # EXECUTABLES
 ##############################################################################
 add_executable(${PROJECT_NAME} ${SFM_HEADER} ${SFM_SOURCE} ${SEGMENT_HEADER} ${SEGMENT_SOURCE}
-               ${BUNDLE_HEADER} ${BUNDLE_SOURCE} ${UTILITIE_HEADER} ${MAIN_SOURCE} include/DendrometryE.h src/DendrometryE.cpp)
+               ${BUNDLE_HEADER} ${BUNDLE_SOURCE} ${UTILITIE_HEADER} ${DENDROMETRY_HEADER} ${DENDROMETRY_SOURCE}
+               ${MAIN_SOURCE})
 
 ##############################################################################
 # TARGET LIBRARIES
@@ -113,5 +116,5 @@ set(OpenCV_LIBRARIES opencv_core opencv_highgui opencv_features2d opencv_calib3d
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${CERES_LIBRARIES})
 
 MESSAGE("=========================================")
-MESSAGE(" COMPILED WITH CMAKE " ${CMAKE_VERSION})
+MESSAGE("PROJECT: ${PROJECT_NAME} COMPILED WITH CMAKE " ${CMAKE_VERSION})
 MESSAGE("=========================================")
