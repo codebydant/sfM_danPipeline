@@ -16,8 +16,8 @@ class BundleAdjustment {
 
     }
 
-    static void adjustBundle(std::vector<Point3D>& pointCloud, std::vector<cv::Matx34f>& cameraPoses,
-                      CameraData& intrinsics,const std::vector<Feature>& image2dFeature);
+    static void adjustBundle(std::vector<Point3D>& pointCloud, std::vector<cv::Matx34d>& cameraPoses,
+                      Intrinsics& intrinsics,const std::vector<std::vector<cv::Point2d>>& image2dFeatures);
 
 };
 

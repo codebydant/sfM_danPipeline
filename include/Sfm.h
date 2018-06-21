@@ -3,7 +3,6 @@
 //***********************************************
 #include <iostream>
 #include <string>
-#include <thread>
 #include <set>
 #include <eigen3/Eigen/Dense>
 #include <boost/filesystem.hpp>
@@ -15,18 +14,20 @@
 class StructFromMotion{ 
 
   private:
+    std::vector<cv::Mat>                    mColorImages;
+    std::vector<cv::Mat>                    mGrayImages;
     std::vector<cv::Mat>                    nImages;
-    std::vector<cv::Matx34f>                nCameraPoses;
-    std::vector<Feature>                    nFeatureImages;
+    std::vector<cv::Matx34d>                nCameraPoses;
     std::vector<std::string>                nImagesPath;
     std::string                             pathImages;
     std::set<int>                           nDoneViews;
     std::set<int>                           nGoodViews;
-    CameraData                              cameraMatrix;
-    cv::Ptr<cv::Feature2D>                  ptrFeature2D;
-    cv::Ptr<cv::DescriptorMatcher>          matcher;
+    Intrinsics                              cameraMatrix;
     float                                   NN_MATCH_RATIO;
-    cv::Ptr<cv::Feature2D> detector;
+    std::vector<std::vector<cv::KeyPoint>>  imagesKeypoints;
+    std::vector<cv::Mat>                    imagesDescriptors;
+    std::vector<std::vector<cv::Point2d>>   imagesPts2D;
+    int                                     detector;
 
   public:
     std::vector<Point3D>                    nReconstructionCloud;
@@ -36,25 +37,24 @@ class StructFromMotion{
     //CONSTRUCTOR
     //===============================================
     StructFromMotion(){
-      /* @ FLANNBASED = 1,@ BRUTEFORCE = 2,@ BRUTEFORCE_L1 = 3,@ BRUTEFORCE_HAMMING = 4,
-         @ BRUTEFORCE_HAMMINGLUT = 5,@ BRUTEFORCE_SL2 = 6  */
+
+      /* @ SIFT = 1,@ AKAZE = 2,@ ORB = 3 */
       int selector = 1;
       switch(selector){
 
         case 1:
-           detector= cv::xfeatures2d::SIFT::create();
+           detector = 1;
           break;
         case 2:
-           detector= cv::AKAZE::create();
+           detector = 2;
           break;
         case 3:
-           detector= cv::ORB::create(10000,1.2,8,15,0,2,0,31);
+           detector = 3;
           break;
         default:
           break;
-
       }
-      matcher = cv::DescriptorMatcher::create(2);
+
       NN_MATCH_RATIO = 0.8f;
     }
     //===============================================
@@ -76,19 +76,21 @@ class StructFromMotion{
     //===============================================
     //FEATURE DETECTION AND EXTRACTION
     //===============================================
-    Feature getFeature(const cv::Mat& image);
+    void getFeature(const cv::Mat& image,const int& numImage);
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    bool extractFeature();
+    void extractFeature();
     //===============================================
     //FEATURE MATCHING
     //===============================================
-    Matching getMatching(const Feature& queryImage,const Feature& trainImage);
+    void getMatching(const int& queryImage,const int& trainImage,Matching* goodMatches);
+    void prunedMatchingWithHomography(const int& idx_query, const int& idx_train,
+                                                        const Matching& goodMatches,Matching* prunedMatch);
     //===============================================
     //CONVERTION KEYPOINTS TO POINTS2D
     //===============================================
-    void keypoints2F(Keypoints& keypoints, Points2f& points2D);
+    void keypointstoPoints(Keypoints& keypoints, Points2d& points2D);
     //===============================================
     //GET CAMERA MATRIX
     //===============================================
@@ -100,21 +102,21 @@ class StructFromMotion{
     //===============================================
     //FUNCTION ALIGNED POINTS
     //===============================================
-    void AlignedPointsFromMatch(const Feature& queryImg,const Feature& trainImg,const Matching& matches,
-                                Feature& alignedL,Feature& alignedR);
-    void AlignedPoints(const Feature& queryImg,const Feature& trainImg,const Matching& matches,
-                       Feature& alignedL, Feature& alignedR,std::vector<int>& idLeftOrigen,
+    void AlignedPointsFromMatch(const Points2d& queryImg,const Points2d& trainImg,const Matching& matches,
+                                Points2d& alignedL,Points2d& alignedR);
+    void AlignedPoints(const Points2d& queryImg,const Points2d& trainImg,const Matching& matches,
+                       Points2d& alignedL, Points2d& alignedR,std::vector<int>& idLeftOrigen,
                        std::vector<int>& idRightOrigen);
     //===============================================
     //FUNCTION CORRESPONDENCES 2D-3D
     //===============================================
-    bool triangulateViews(const Feature& left,const Feature& right,const cv::Matx34f& P1,
-                 const cv::Matx34f& P2,const Matching& matches,const CameraData& matrixK,
+    bool triangulateViews(const Points2d& left,const Points2d& right,const cv::Matx34d& P1,
+                 const cv::Matx34d& P2,const Matching& matches,const Intrinsics& matrixK,
                  const std::pair<int,int>& imagePair,std::vector<Point3D>& pointcloud);
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    bool baseTriangulation();
+    bool baseReconstruction();
     //===============================================
     //POINTCLOUD VISUALIZER
     //===============================================
@@ -130,7 +132,7 @@ class StructFromMotion{
     //===============================================
     //FIND HOMOGRAPHY INLIERS
     //===============================================
-    int findHomographyInliers(const Feature& f1,const Feature& f2,const Matching& matches);
+    int findHomographyInliers(const int& f1,const int& f2,const Matching& matches);
     //===============================================
     //ADD MORE VIEWS FUNCTION
     //===============================================
@@ -138,18 +140,18 @@ class StructFromMotion{
     //===============================================
     //FIND CAMERA POSE WITH PNPRANSAC
     //===============================================
-    bool findCameraPosePNP(const CameraData& matrixK,const std::vector<cv::Point3f>& pts3D,
-                           const std::vector<cv::Point2f>& pts2D,cv::Matx34f& cameraPose);
+    bool findCameraPosePNP(const Intrinsics& matrixK,const std::vector<cv::Point3d>& pts3D,
+                           const std::vector<cv::Point2d>& pts2D,cv::Matx34d& cameraPose);
     //===============================================
     //FIND 2D-3D CORRESPONDENCES
     //===============================================
     void find2D3DMatches(const int& NEW_VIEW,
-                                           std::vector<cv::Point3f>& points3D,
-                                           std::vector<cv::Point2f>& points2D,Matching& bestMatches,int& DONEVIEW);
+                                           std::vector<cv::Point3d>& points3D,
+                                           std::vector<cv::Point2d>& points2D,Matching& bestMatches,int& DONEVIEW);
     //===============================================
     //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
     //===============================================
-    std::map<float,std::pair<int,int>>  findBestPair();
+    std::map<int,std::pair<int,int>>  findBestPair();
     //===============================================
     //MERGE NEW POINTCLOUD
     //===============================================
@@ -161,9 +163,9 @@ class StructFromMotion{
     //===============================================
     //FIND CAMERA POSE WITH ESSENTIAL MATRIX
     //===============================================
-    bool getCameraPose(const CameraData& intrinsics,const Matching & matches,
-                       const Feature& left, const Feature& right,
-                       cv::Matx34f& Pleft, cv::Matx34f& Pright);
+    bool getCameraPose(const Intrinsics& intrinsics,const int& idx_query,const int& idx_train,const Matching & matches,
+                       const Points2d& left, const Points2d& right,
+                       cv::Matx34d& Pleft, cv::Matx34d& Pright);
     //===============================================
     //MESHING POINTCLOUD
     //===============================================
@@ -171,7 +173,7 @@ class StructFromMotion{
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    Matching matchingFor2D3D(Feature& feature1,Feature& feature2);
+
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================

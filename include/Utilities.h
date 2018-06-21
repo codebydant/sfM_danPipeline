@@ -9,7 +9,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/flann/flann.hpp>
-#include <thread>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/point_cloud.h>
@@ -27,33 +26,19 @@
 
 using Keypoints = std::vector<cv::KeyPoint>;
 using Matching = std::vector<cv::DMatch>;
-using Points2f = std::vector<cv::Point2f>;
-using Points3f = std::vector<cv::Point3f>;
+using Points2d = std::vector<cv::Point2d>;
 
-struct Feature{
+struct Intrinsics{
 
-    Keypoints	kps;
-    Points2f	pt2D;
-    cv::Mat	descriptors;
-
-};
-
-struct CameraData{
-
-  cv::Mat K;
-  cv::Mat invK;
-  cv::Mat distCoef;
-  float fx;
-  float fy;
-  float cx;
-  float cy;
+  cv::Mat_<double> K;
+  cv::Mat_<double> distCoef;
 
 };
 
 struct Point3D {
 
-    cv::Point3f pt;    
+    cv::Point3d pt;
     std::map<const int,int> idxImage;
-    std::map<const int,cv::Point2f> pt2D;
+    std::map<const int,cv::Point2d> pt2D;
 
 };
