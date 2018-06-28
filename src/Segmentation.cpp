@@ -12,7 +12,7 @@ void Segmentation::color_based_growing_segmentation(){
   std::cout << "************************************************" << std::endl;
 
   if(cloud->size() <= 0){
-     std::cout << "Cloud reading failed." << std::endl;
+     std::cout << "Cloud reading failed. no data points found" << std::endl;
      std::exit(-1);
   }
 
@@ -48,9 +48,8 @@ void Segmentation::color_based_growing_segmentation(){
   }
   std::cout << "Extract:" << clusters.size() << " clusters" << std::endl;
 
-  std::cout << "Getting color cloud..." << std::flush;
+  std::cout << "Getting color cloud..." << std::endl;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
-  std::cout << "[DONE]" << std::endl;
 
   std::cout << "************************************************" << std::endl;
   std::cout << "************************************************" << std::endl;
