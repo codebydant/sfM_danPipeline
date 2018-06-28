@@ -30,9 +30,10 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 - ROS Kinetic: http://wiki.ros.org/kinetic/Installation/Ubuntu
 
 ### How to make
-1. Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
-2. Copy the package to ROS workspace/src
-4. Compile with catkin
+* Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
+* Copy the package to ROS workspace/src
+* Compile with catkin
+
 	cd ~/catkin_ws
 	catkin_make
 
