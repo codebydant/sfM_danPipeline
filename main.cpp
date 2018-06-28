@@ -65,7 +65,7 @@ int main(int argc, char **argv){
   /*************************
   STEP 1: 3D MAPPING
   **************************/
-  success = sf.run_SFM();
+  success = sf.map3D();
   if(not success){
       std::cerr << "Error: Could not obtain 3D Mapping." << std::endl;
       return -1;
