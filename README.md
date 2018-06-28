@@ -34,8 +34,8 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 2. Copy the package to ROS workspace/src
 4. Compile with catkin
    
-	cd ~/catkin_ws
-	catkin_make
+   	cd ~/catkin_ws
+    	catkin_make
 	 
 ### Test
 	cd ~/catkin_ws
