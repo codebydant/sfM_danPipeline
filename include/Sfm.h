@@ -9,6 +9,7 @@
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/thread/thread.hpp>
 #include "DendrometryE.h"
+#include <chrono>
 
 
 class StructFromMotion{ 
@@ -55,12 +56,13 @@ class StructFromMotion{
           break;
       }
 
+      //less matches <-- NN_MATCH_RATIO --> more matches
       NN_MATCH_RATIO = 0.8f;
     }
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
-    bool run_SFM ();   
+    bool map3D();
     //===============================================
     //PIPELINE
     //===============================================
@@ -151,7 +153,7 @@ class StructFromMotion{
     //===============================================
     //FIND BEST PAIR FOR BASELINE RECONSTRUCTION
     //===============================================
-    std::map<int,std::pair<int,int>>  findBestPair();
+    std::map<float,std::pair<int,int>>  findBestPair();
     //===============================================
     //MERGE NEW POINTCLOUD
     //===============================================
@@ -170,14 +172,7 @@ class StructFromMotion{
     //MESHING POINTCLOUD
     //===============================================
     void meshingPointCloud();
-    //===============================================
-    //MULTITHREADING FUNCTION
-    //===============================================
 
-    //===============================================
-    //MULTITHREADING FUNCTION
-    //===============================================
-    void createPointsTxt();
     //===============================================
     //MULTITHREADING FUNCTION
     //===============================================
@@ -191,8 +186,9 @@ class StructFromMotion{
     void create_mesh(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,pcl::PolygonMesh &mesh);
     void vizualizeMesh(pcl::PolygonMesh &mesh);
 
-    void optical_flow_feature_match();
     void MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatch>* matches);
+
+    void keypointstoPoints2F(std::vector<cv::KeyPoint>& keypoints, std::vector<cv::Point2f>& points2D);
 
 };
 
