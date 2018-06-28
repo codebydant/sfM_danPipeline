@@ -1,5 +1,5 @@
 
-# A Simple Structure From Motion Pipeline for 3D Reconstruction of a tree
+# 3D Mapping of a indivual tree with SFM-PMVS
 
 This is a reference implementation of a Structure-from-Motion pipeline in OpenCV, following the work of Roy Shilkrot at SfM-Toy-Library. https://github.com/royshil/SfM-Toy-Library
 
