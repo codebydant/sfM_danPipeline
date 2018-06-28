@@ -6,16 +6,15 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 *Note:* This is not a complete and robust SfM pipeline implementation. The purpose of this code is to do a 3D reconstruction of a tree and get dendrometry estimation. 
 
 ----------------------
-## example
+## Example
 
 <img src="./launch/img2.png" align="center" height="480" width="640"><br>
 
 A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle adjustment. 
 * Incremental SFM
-* Bundle Adjustment
-* RViz visualizer
-* PCL Color segmentation
- 
+* Bundle Adjustment - Ceres solver
+* Segmentation - PCL color based growing segmentation
+* Densify cloud - PMVS2 
 
 ### Resources
 
