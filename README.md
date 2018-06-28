@@ -33,11 +33,9 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 1. Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
 2. Copy the package to ROS workspace/src
 4. Compile with catkin
-
 	cd ~/catkin_ws
-	source devel/setup.bash
-	roscore
-	rosrun perc_robotic_system3d perc_robotic_system3d	
+	catkin_make
+
 	 
 ### Test
 	cd ~/catkin_ws
