@@ -8,7 +8,7 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 ----------------------
 ## Example
 
-<img src="./imgs/tree_house.jpg" align="center" height="400" width="1380"><br>
+<img src="./imgs/tree_house.jpg" align="center" height="400" width="1600"><br>
 
 A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle adjustment. 
 * Incremental SFM
