@@ -14,7 +14,7 @@ A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle ad
 
 ## Example
 
-<img src="./img/example.png" align="center" height="500" width="700"><br>
+<img src="./imgs/example.png" align="center" height="500" width="700"><br>
 
 ### Resources
 
