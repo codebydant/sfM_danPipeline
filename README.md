@@ -25,8 +25,8 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 - OpenCV 3.4.1: https://github.com/opencv
 - PCL 1.8.1
 
-### How to make
-* Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip
+### Compilation
+* Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip<br/>
 Compile with cmake
 
 
