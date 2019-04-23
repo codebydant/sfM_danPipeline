@@ -1,5 +1,5 @@
 
-# A simple structure from motion pipeline for 3d incremental reconstruction
+# A simple structure from motion pipeline for 3D incremental reconstruction
 
 This is a reference implementation of a Structure-from-Motion pipeline in OpenCV, following the work of Roy Shilkrot at SfM-Toy-Library. https://github.com/royshil/SfM-Toy-Library
 
@@ -10,7 +10,7 @@ This is a reference implementation of a Structure-from-Motion pipeline in OpenCV
 A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle adjustment. 
 * Incremental SFM
 * Bundle Adjustment - Ceres solver
-* Densify cloud - PMVS2 
+* Densification process - PMVS2 
 
 ## Example
 
