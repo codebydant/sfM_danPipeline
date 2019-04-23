@@ -28,8 +28,8 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 ### Compilation
 * Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip<br/>
 
-	cmake ../
-	make
+		cmake ../
+		make
  	 
 ### Test
 	cd ~/buil_directory
