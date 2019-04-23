@@ -22,8 +22,8 @@ A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle ad
 To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 
 ### Prerequisite
-- OpenCV 3.4.1: https://github.com/opencv
-- PCL 1.8.1
+- OpenCV 3.4.1: https://github.com/opencv/opencv/tree/3.4.1
+- PCL 1.8.1: https://github.com/PointCloudLibrary/pcl/tree/pcl-1.8.1
 
 ### Compilation
 * Set "YOUR OWN" PCL Build DIR in CMakeList.txt e.g: **/opt/pcl-1.8.1/build** and save it.
