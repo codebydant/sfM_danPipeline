@@ -30,12 +30,12 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 Compile with cmake
 
 
-		cmake ../
-		make
+	cmake ../
+	make
  	 
 ### Test
-		cd ~/buil_directory
-		./iTree3DMap
+	cd ~/buil_directory
+	./iTree3DMap
 
 *Note:*
 If OpenCV are not install. just compiled. pleas set the path to the current build directory in CMakeList.txt file.
