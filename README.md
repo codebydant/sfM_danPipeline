@@ -32,9 +32,9 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 
 in the main folder:
 
-    - cd build  
-    - cmake ../
-    - make
+    cd build  
+    cmake ../
+    make
  	 
 ### Test
 	cd /build/bin
