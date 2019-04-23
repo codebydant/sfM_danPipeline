@@ -12,6 +12,10 @@ A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle ad
 * Bundle Adjustment - Ceres solver
 * Densify cloud - PMVS2 
 
+## Example
+
+<img src="./example/example.png" align="center" height="500" width="700"><br>
+
 ### Resources
 
 * Homepage: <http://opencv.org>
