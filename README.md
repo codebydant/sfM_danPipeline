@@ -26,13 +26,18 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 - PCL 1.8.1
 
 ### Compilation
-* Download the src code: git@github.com:danielTobon43/perc_robotic_system3d.git and Unpack .zip<br/>
+* Set "YOUR OWN" PCL Build DIR in CMakeList.txt e.g: **/opt/pcl-1.8.1/build** and save it.
+* Set "YOUR OWN" OpenCV Build DIR in CMakeList.txt e.g: **/opt/opencv-3.4.1/build** and save it.
+* Create a "build" folder
 
-		cmake ../
-		make
+in the main folder:
+
+    - cd build  
+    - cmake ../
+    - make
  	 
 ### Test
-	cd ~/buil_directory
+	cd /build/bin
 	./iTree3DMap
 
 *Note:*
