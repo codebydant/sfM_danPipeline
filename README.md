@@ -30,8 +30,8 @@ To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
 Compile with cmake
 
 
-		cmake ../
-		make
+	cmake ../
+	make
  	 
 ### Test
 	cd ~/buil_directory
