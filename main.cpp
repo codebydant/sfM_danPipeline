@@ -9,7 +9,7 @@
 // This function displays the help
 void help(char** arg1){
   std::cout << "----------------------------------------------- \n"
-               "The program create a 3D reconstruction from a images sequence." << std::endl
+               "The program create a 3D reconstruction from an images sequence." << std::endl
             << "Usage:\n" << arg1[0] << " <image sequence> " << " <camera calibration file.xml>" << std::endl
             << "'esc' --> for quit the program" <<
             "\n -----------------------------------------------"<< std::endl;
