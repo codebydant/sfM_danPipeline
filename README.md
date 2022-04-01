@@ -45,7 +45,7 @@ in the main folder:
 	./iTree3DMap
 
 *Note:*
-If OpenCV are not install. just compiled. pleas set the path to the current build directory in CMakeList.txt file.
+If OpenCV is not installed (just compiled). please set the path to the current build directory in the CMakeList.txt file.
 
 
 
