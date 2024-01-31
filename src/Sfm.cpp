@@ -1,8 +1,8 @@
 ﻿//***********************************************
 //HEADERS
 //***********************************************
-#include "include/Sfm.h"
-
+#include "../include/Sfm.h"
+#include <opencv2/highgui/highgui.hpp>
 /********************************************
                   PIPELINE
 ********************************************/
@@ -180,7 +180,7 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
       if(!nImages[i].empty()){
           if(nImages[i].type() == CV_8UC1){
 
-              cv::cvtColor(nImages[i], mColorImages[i], CV_GRAY2BGR);
+              cv::cvtColor(nImages[i], mColorImages[i], cv::COLOR_GRAY2BGR);
           }else if(nImages[i].type() == CV_32FC3 || nImages[i].type() == CV_64FC3){
 
               nImages[i].convertTo(mColorImages[i], CV_8UC3, 255.0);
@@ -191,7 +191,7 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
       }
 
       mGrayImages.push_back(cv::Mat());
-      cv::cvtColor(mColorImages[i], mGrayImages[i], CV_BGR2GRAY);
+      cv::cvtColor(mColorImages[i], mGrayImages[i], cv::COLOR_GRAY2BGR);
   }
 
   return true;
@@ -273,7 +273,7 @@ void StructFromMotion::extractFeature(){
   }
 
   std::cout << "*-- Features --*" << std::endl;
-  cv::namedWindow("Image kps",CV_WINDOW_NORMAL);
+  cv::namedWindow("Image kps", cv::WINDOW_NORMAL);
   cv::resizeWindow("Image kps",640,480);
   cv::moveWindow("Image kps",0,0);
 

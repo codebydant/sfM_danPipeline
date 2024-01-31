@@ -17,7 +17,7 @@ project(iTree3DMap C CXX)
 find_package(OpenCV REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(PCL REQUIRED)
-find_package(VTK REQUIRED)
+find_package(VTK 7.1 REQUIRED)
 
 # set(OpenCV_DIR /opt/opencv-3.4.1/build)
 # set(PCL_DIR /opt/pcl-1.8.1/build)
