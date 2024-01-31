@@ -95,6 +95,7 @@ include(${VTK_USE_FILE})
 link_directories(${OpenCV_LIBRARIES})
 link_directories(${PCL_LIBRARY_DIRS})
 link_directories(${CERES_LIBRARIES})
+link_directories(${VTK_LIBRARIES})
 
 ##############################################################################
 # SOURCE CODE
