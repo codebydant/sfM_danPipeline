@@ -286,7 +286,7 @@ void StructFromMotion::extractFeature(){
       cv::drawKeypoints(image,imagesKeypoints.at(n),imageKps,cv::Scalar::all(-1),0);
       cv::rectangle(imageKps,cv::Point(10,imageKps.rows-25),cv::Point(imageKps.cols/8,
                                                                       imageKps.rows-5),
-                    cv::Scalar(0,255,0),CV_FILLED);
+                    cv::Scalar(0,255,0), cv::FILLED);
       cv::putText(imageKps, "Image" + std::to_string(n),
                   cv::Point(10,imageKps.rows-11),cv::FONT_ITALIC,imageKps.cols/imageKps.rows,cv::Scalar(0,0,0),2);
       cv::imshow("Image kps",imageKps);
@@ -413,7 +413,7 @@ bool StructFromMotion::baseReconstruction(){
      return false;
   }
 
-  cv::namedWindow("Best pair matching",CV_WINDOW_NORMAL);
+  cv::namedWindow("Best pair matching", cv::WINDOW_NORMAL);
   cv::resizeWindow("Best pair matching",640*2,480);
   cv::moveWindow("Best pair matching",0,0);
 
@@ -452,11 +452,11 @@ bool StructFromMotion::baseReconstruction(){
                       imagesKeypoints.at(trainImage),bestMatch,matchImage,
                       cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),2);
       cv::rectangle(matchImage,cv::Point(10,matchImage.rows-25),cv::Point(80,matchImage.rows-5),
-                    cv::Scalar(0,255,0),CV_FILLED);
+                    cv::Scalar(0,255,0),cv::FILLED);
       cv::putText(matchImage, "Image" + std::to_string(queryImage),
                   cv::Point(10,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
       cv::rectangle(matchImage,cv::Point(670,matchImage.rows-25),cv::Point(740,matchImage.rows-5),
-                    cv::Scalar(0,255,0),CV_FILLED);
+                    cv::Scalar(0,255,0),cv::FILLED);
       cv::putText(matchImage, "Image" + std::to_string(trainImage),
                   cv::Point(670,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
       cv::imshow("Best pair matching", matchImage);
@@ -502,7 +502,7 @@ std::map<float,std::pair<int,int>>  StructFromMotion::findBestPair(){
   std::map<float,std::pair<int,int>> numInliers;
   const size_t numImg = nImages.size();
 
-  cv::namedWindow("Matching pairs",CV_WINDOW_NORMAL);
+  cv::namedWindow("Matching pairs", cv::WINDOW_NORMAL);
   cv::resizeWindow("Matching pairs",640*2,480);
   cv::moveWindow("Matching pairs",0,0);
 
@@ -520,11 +520,11 @@ std::map<float,std::pair<int,int>>  StructFromMotion::findBestPair(){
                         imagesKeypoints.at(trainImage),correspondences,matchImage,
                         cv::Scalar(255, 0, 0), cv::Scalar(0, 255, 255));
         cv::rectangle(matchImage,cv::Point(10,matchImage.rows-25),cv::Point(80,matchImage.rows-5),
-                      cv::Scalar(0,255,0),CV_FILLED);
+                      cv::Scalar(0,255,0),cv::FILLED);
         cv::putText(matchImage, "Image" + std::to_string(queryImage),
                     cv::Point(10,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
         cv::rectangle(matchImage,cv::Point(670,matchImage.rows-25),cv::Point(740,matchImage.rows-5),
-                      cv::Scalar(0,255,0),CV_FILLED);
+                      cv::Scalar(0,255,0),cv::FILLED);
         cv::putText(matchImage, "Image" + std::to_string(trainImage),
                     cv::Point(670,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
         cv::imshow("Matching pairs", matchImage);
@@ -540,7 +540,7 @@ std::map<float,std::pair<int,int>>  StructFromMotion::findBestPair(){
         cv::Mat mask;
         cv::Mat cam_matrix = cv::Mat(cameraMatrix.K);
         cv::Mat E = cv::findEssentialMat(alignedLeft, alignedRight,
-                                         cam_matrix,CV_RANSAC,0.999, 1.0,mask);
+                                         cam_matrix,cv::RANSAC,0.999, 1.0,mask);
 
         int numHomInli = findHomographyInliers(queryImage,trainImage,correspondences);
 
@@ -629,7 +629,7 @@ void StructFromMotion::prunedMatchingWithHomography(const int& idx_query, const 
   //std::vector<cv::KeyPoint> inliers1, inliers2;
 
   if(matched1.size() >= 4){
-     homography = cv::findHomography(query_points,train_points,CV_RANSAC, ransac_thresh, inliers_mask);
+     homography = cv::findHomography(query_points,train_points,cv::RANSAC, ransac_thresh, inliers_mask);
   }
 
   std::cout << "Homography inliers mask:" << inliers_mask.rows << " inliers" <<std::endl;
@@ -678,7 +678,7 @@ int StructFromMotion::findHomographyInliers(const int& idx_query,const int& idx_
   //0.004 * maxVal
 
   if(matches.size()>=4){
-       matrixH = cv::findHomography(query_points,train_points,CV_RANSAC,0.004 * maxVal,inliersMask);
+       matrixH = cv::findHomography(query_points,train_points,cv::RANSAC,0.004 * maxVal,inliersMask);
   }
 
   if(matches.size() < 4 || matrixH.empty()) {
@@ -741,7 +741,7 @@ bool StructFromMotion::getCameraPose(const Intrinsics& intrinsics,const int& idx
   cv::Mat mask;
   cv::Mat cam_matrix = cv::Mat(intrinsics.K);
   cv::Mat E = cv::findEssentialMat(alignedLeft, alignedRight,
-                                   cam_matrix,CV_RANSAC,0.999, 1.0,mask);
+                                   cam_matrix,cv::RANSAC,0.999, 1.0,mask);
 
   std::cout << "Essential matrix:\n" << E << std::endl;
 
@@ -1151,7 +1151,7 @@ bool StructFromMotion::findCameraPosePNP(const Intrinsics& intrinsics,const std:
   cv::minMaxIdx(pts2D, &minVal, &maxVal);
   //"solvePnPRansac"
   cv::solvePnPRansac(pts3D,pts2D,intrinsics.K,intrinsics.distCoef,rvec,T,true,1000,
-                     0.006 * maxVal,0.99,inliers,CV_EPNP);
+                     0.006 * maxVal,0.99,inliers,cv::SOLVEPNP_ITERATIVE); //was initially EPNP, can do SOLVEPNP_[some variation of P3P,ITERATIVE,EPNP,AP3P]
 
   std::vector<cv::Point2d> projected3D;
   cv::projectPoints(pts3D, rvec, T, intrinsics.K,intrinsics.distCoef, projected3D);
@@ -1408,8 +1408,8 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		// making sure images are grayscale
 		cv::Mat prevgray, gray;
 		if(nImages[idx_i].channels() == 3) {
-			cv::cvtColor(nImages[idx_i], prevgray, CV_RGB2GRAY);
-			cv::cvtColor(nImages[idx_j], gray, CV_RGB2GRAY);
+			cv::cvtColor(nImages[idx_i], prevgray, cv::COLOR_GRAY2BGR);
+			cv::cvtColor(nImages[idx_j], gray, cv::COLOR_GRAY2BGR);
 		}else {
 			prevgray = nImages[idx_i];
 			gray = nImages[idx_j];
