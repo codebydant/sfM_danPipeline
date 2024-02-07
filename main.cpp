@@ -47,7 +47,7 @@ int main(int argc, char **argv){
   STEP X: INPUT IMAGES
   **************************/
   StructFromMotion sf;    
-  bool success = sf.imagesLOAD("/home/daniel/Proyecto-grado-3D-recons-master/data/temple");
+  bool success = sf.imagesLOAD("../data/temple");
   if(not success){
       std::cerr << "Error: set of images is not valid." << std::endl;
       return -1;
@@ -56,7 +56,7 @@ int main(int argc, char **argv){
   /*************************
   STEP X: INPUT CAMERA FILE
   **************************/
-  success = sf.getCameraMatrix("/home/daniel/Proyecto-grado-3D-recons-master/data/temple/camera_calibration_template.xml");
+  success = sf.getCameraMatrix("../data/temple/camera_calibration_template.xml");
   if(not success){
       std::cerr << "Error: camera calibration file is not valid." << std::endl;
       return -1;

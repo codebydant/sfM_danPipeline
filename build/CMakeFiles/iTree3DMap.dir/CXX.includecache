@@ -4824,22 +4824,6 @@ pcl/surface/poisson.h
 pcl/common/common.h
 -
 
-/workspaces/test-pipeline/SfM_pipeline/main.cpp
-include/Sfm.h
-/workspaces/test-pipeline/SfM_pipeline/include/Sfm.h
-
-/workspaces/test-pipeline/SfM_pipeline/src/BundleAdjustment.cpp
-../include/BundleAdjustment.h
-/workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
-ceres/ceres.h
--
-ceres/rotation.h
--
-
-/workspaces/test-pipeline/SfM_pipeline/src/DendrometryE.cpp
-../include/DendrometryE.h
-/workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
-
 /workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp
 ../include/Sfm.h
 /workspaces/test-pipeline/SfM_pipeline/include/Sfm.h

@@ -1,0 +1,64 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/cpp
+{
+	
+	
+	// docker build commands are to create the docker image
+	// docker build -t docker_image_name -f dockerfile_name .
+	//docker network is needed to assign ip address to docker container
+	// docker network create --driver bridge --subnet 192.168.200.0/24 my_custom_network
+
+
+	// make sure to uncomment the image that is desired for development
+	"image": "hypertools_4_2:latest" ,
+	// "image": "hypertools_cubert:latest" ,
+	// "image": "hypertools_4_2_cuda:latest" ,
+	// "image": "hypertools_current_opencv:latest" ,
+	// "image": "hypertools_cubert_cuda:latest" ,
+	// "image": "hypertools_cuda_ml:latest" ,
+
+	
+	"mounts": [
+
+		// below two mounts are for visualization on windows machine if there are issues with wsl
+		// "source=/run/desktop/mnt/host/wslg/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+		// "source=/run/desktop/mnt/host/wslg,target=/mnt/wslg,type=bind,consistency=cached",
+
+		// below is used for visualization on ubuntu machine if there are issues with visualization
+		// "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+		
+		// below mounts hyperimages in container
+		"source=${localWorkspaceFolder}/../HyperImages,target=/workspaces/HyperImages,type=bind,consistency=cached"
+	  ],
+
+
+	// "remoteEnv": {"DISPLAY":":0"},
+	
+	 //below is used when cuda image is being used
+	 /*
+	 "runArgs": [
+	 	"--gpus=all", // used for cuda images
+	 //"--network=host", //used to connect to camera on ubunutu, assumes host has ethernet interface ip of 192.168.20.x, subnet of 255.255.255.0
+	       //testing below for getting camera working with docker in wsl	
+	//	 "-p", "9392:9392", "--network=my_custom_network", "ip=192.168.200.20"
+	       //note: subnet needs to be 255.255.255.0, camera ip is 127.0.0.1	
+	 ],*/
+
+	 "customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+		  // Add the IDs of extensions you want installed when the container is created.
+		  "extensions": [
+			"ms-python.python",
+			"GitHub.copilot",
+			"ms-vscode.cmake-tools",
+			"ms-azuretools.vscode-docker",
+			"streetsidesoftware.code-spell-checker",
+			"ms-vscode.cpptools",
+			"ms-vscode.cpptools-extension-pack"
+
+			]
+		}
+	  }
+
+}

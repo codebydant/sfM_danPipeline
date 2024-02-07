@@ -180,7 +180,7 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
       if(!nImages[i].empty()){
           if(nImages[i].type() == CV_8UC1){
 
-              cv::cvtColor(nImages[i], mColorImages[i], cv::COLOR_GRAY2BGR);
+              cv::cvtColor(nImages[i], mColorImages[i], cv::COLOR_BGR2GRAY);
           }else if(nImages[i].type() == CV_32FC3 || nImages[i].type() == CV_64FC3){
 
               nImages[i].convertTo(mColorImages[i], CV_8UC3, 255.0);
@@ -191,7 +191,7 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
       }
 
       mGrayImages.push_back(cv::Mat());
-      cv::cvtColor(mColorImages[i], mGrayImages[i], cv::COLOR_GRAY2BGR);
+      cv::cvtColor(mColorImages[i], mGrayImages[i], cv::COLOR_BGR2GRAY);
   }
 
   return true;
@@ -1409,8 +1409,8 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		// making sure images are grayscale
 		cv::Mat prevgray, gray;
 		if(nImages[idx_i].channels() == 3) {
-			cv::cvtColor(nImages[idx_i], prevgray, cv::COLOR_GRAY2BGR);
-			cv::cvtColor(nImages[idx_j], gray, cv::COLOR_GRAY2BGR);
+			cv::cvtColor(nImages[idx_i], prevgray, cv::COLOR_BGR2GRAY);
+			cv::cvtColor(nImages[idx_j], gray, cv::COLOR_BGR2GRAY);
 		}else {
 			prevgray = nImages[idx_i];
 			gray = nImages[idx_j];
@@ -1433,12 +1433,27 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		}
 
 		std::set<int> found_in_imgpts_j;
-		cv::Mat to_find_flat = cv::Mat(to_find).reshape(1, to_find.size());
+    // cv::Mat to_find_flat = cv::Mat(to_find).clone();
+    // cv::Mat reshapedMat = to_find_flat.reshape(1);
+    // to_find_flat = reshapedMat;
+
+		cv::Mat to_find_Mat = cv::Mat(to_find).reshape(1, to_find.size());
+    cv::Mat to_find_clone = to_find_Mat.clone();
+    cv::Mat to_find_flat = to_find_clone.reshape(1, to_find_clone.total());
+    
 
 		std::vector<cv::Point2f> j_pts_to_find ;
 		keypointstoPoints2F(imagesKeypoints.at(idx_j),j_pts_to_find);
 		//keypoints2F(imgpts[idx_j], j_pts_to_find);
-		cv::Mat j_pts_flat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
+		// cv::Mat j_pts_flat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
+
+    cv::Mat j_pts_Mat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
+    cv::Mat j_pts_clone = j_pts_Mat.clone();
+    cv::Mat j_pts_flat = j_pts_clone.reshape(1, j_pts_clone.total());
+
+    //for radiusMatch prerequisites
+    to_find_flat.convertTo(to_find_flat, CV_32F);
+    j_pts_flat.convertTo(j_pts_flat, CV_32F);
 
 		std::vector<std::vector<cv::DMatch> > knn_matches;
 		cv::FlannBasedMatcher matcher;
