@@ -283,7 +283,8 @@ void StructFromMotion::extractFeature(){
       getFeature(image,n);
       std::cout << "Image:" << n << " --> " << imagesKeypoints.at(n).size() << " kps" << std::endl;
       cv::Mat imageKps;
-      cv::drawKeypoints(image,imagesKeypoints.at(n),imageKps,cv::Scalar::all(-1),0);
+      // cv::drawKeypoints(image,imagesKeypoints.at(n),imageKps,cv::Scalar::all(-1),0);
+    cv::drawKeypoints(image, imagesKeypoints.at(n), imageKps, cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
       cv::rectangle(imageKps,cv::Point(10,imageKps.rows-25),cv::Point(imageKps.cols/8,
                                                                       imageKps.rows-5),
                     cv::Scalar(0,255,0), cv::FILLED);
@@ -338,13 +339,13 @@ void StructFromMotion::getFeature(const cv::Mat& image,const int& numImage){
         int nOctaveLayers = 4;
         int diffusivity = cv::KAZE::DIFF_PM_G2;
 
-        cv::Ptr<cv::AKAZE> akaze= cv::AKAZE::create(descriptor_type,descriptor_size,
-                                                       descriptor_channels,threshold,nOctaves,
-                                                       nOctaveLayers,diffusivity);
+        // cv::Ptr<cv::AKAZE> akaze= cv::AKAZE::create(descriptor_type,descriptor_size,
+        //                                                descriptor_channels,threshold,nOctaves,
+        //                                                nOctaveLayers,diffusivity); //AKAZE removed for  TESTING
 
         std::vector<cv::KeyPoint> kps;
         cv::Mat descriptors;
-        akaze->detectAndCompute(image,cv::noArray(),kps,descriptors,false);
+        // akaze->detectAndCompute(image,cv::noArray(),kps,descriptors,false); //removed for TESTING
 
         std::vector<cv::Point2d> points2d;
         keypointstoPoints(kps,points2d);
@@ -368,7 +369,7 @@ void StructFromMotion::getFeature(const cv::Mat& image,const int& numImage){
         int fastThreshold = 20;
 
         cv::Ptr<cv::ORB> detector= cv::ORB::create(nfeatures,scaleFactor,nlevels,edgeThreshold,firstLevel,
-                                                   WTA_K,scoreType,patchSize,fastThreshold);
+                                                   WTA_K,cv::ORB::HARRIS_SCORE,patchSize,fastThreshold);//  scoreType now to cv::ORB::HARRIS_SCORE
 
         std::vector<cv::KeyPoint> kps;
         cv::Mat descriptors;
@@ -450,7 +451,7 @@ bool StructFromMotion::baseReconstruction(){
       cv::Mat matchImage;
       cv::drawMatches(mGrayImages.at(queryImage),imagesKeypoints.at(queryImage),mGrayImages.at(trainImage),
                       imagesKeypoints.at(trainImage),bestMatch,matchImage,
-                      cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),2);
+                      cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),cv::DrawMatchesFlags::DEFAULT);
       cv::rectangle(matchImage,cv::Point(10,matchImage.rows-25),cv::Point(80,matchImage.rows-5),
                     cv::Scalar(0,255,0),cv::FILLED);
       cv::putText(matchImage, "Image" + std::to_string(queryImage),

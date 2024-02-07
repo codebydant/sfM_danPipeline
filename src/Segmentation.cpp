@@ -1,4 +1,4 @@
-#include "include/Segmentation.h"
+#include "../include/Segmentation.h"
 
 void Segmentation::color_based_growing_segmentation(){
 
