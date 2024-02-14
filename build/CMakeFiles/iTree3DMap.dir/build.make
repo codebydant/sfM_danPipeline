@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /workspaces/test-pipeline/SfM_pipeline
+CMAKE_SOURCE_DIR = /workspaces/SfM_pipeline
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /workspaces/test-pipeline/SfM_pipeline/build
+CMAKE_BINARY_DIR = /workspaces/SfM_pipeline/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/iTree3DMap.dir/depend.make
@@ -59,68 +59,68 @@ include CMakeFiles/iTree3DMap.dir/flags.make
 
 CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o: CMakeFiles/iTree3DMap.dir/flags.make
 CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o: ../src/Sfm.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o -c /workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o -c /workspaces/SfM_pipeline/src/Sfm.cpp
 
 CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp > CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/SfM_pipeline/src/Sfm.cpp > CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.i
 
 CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp -o CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/SfM_pipeline/src/Sfm.cpp -o CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.s
 
 CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o: CMakeFiles/iTree3DMap.dir/flags.make
 CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o: ../src/Segmentation.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o -c /workspaces/test-pipeline/SfM_pipeline/src/Segmentation.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o -c /workspaces/SfM_pipeline/src/Segmentation.cpp
 
 CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/test-pipeline/SfM_pipeline/src/Segmentation.cpp > CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/SfM_pipeline/src/Segmentation.cpp > CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.i
 
 CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/test-pipeline/SfM_pipeline/src/Segmentation.cpp -o CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/SfM_pipeline/src/Segmentation.cpp -o CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.s
 
 CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o: CMakeFiles/iTree3DMap.dir/flags.make
 CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o: ../src/BundleAdjustment.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o -c /workspaces/test-pipeline/SfM_pipeline/src/BundleAdjustment.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o -c /workspaces/SfM_pipeline/src/BundleAdjustment.cpp
 
 CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/test-pipeline/SfM_pipeline/src/BundleAdjustment.cpp > CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/SfM_pipeline/src/BundleAdjustment.cpp > CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.i
 
 CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/test-pipeline/SfM_pipeline/src/BundleAdjustment.cpp -o CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/SfM_pipeline/src/BundleAdjustment.cpp -o CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.s
 
 CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o: CMakeFiles/iTree3DMap.dir/flags.make
 CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o: ../src/DendrometryE.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o -c /workspaces/test-pipeline/SfM_pipeline/src/DendrometryE.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o -c /workspaces/SfM_pipeline/src/DendrometryE.cpp
 
 CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/test-pipeline/SfM_pipeline/src/DendrometryE.cpp > CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/SfM_pipeline/src/DendrometryE.cpp > CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.i
 
 CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/test-pipeline/SfM_pipeline/src/DendrometryE.cpp -o CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/SfM_pipeline/src/DendrometryE.cpp -o CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.s
 
 CMakeFiles/iTree3DMap.dir/main.cpp.o: CMakeFiles/iTree3DMap.dir/flags.make
 CMakeFiles/iTree3DMap.dir/main.cpp.o: ../main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/iTree3DMap.dir/main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/main.cpp.o -c /workspaces/test-pipeline/SfM_pipeline/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/iTree3DMap.dir/main.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/iTree3DMap.dir/main.cpp.o -c /workspaces/SfM_pipeline/main.cpp
 
 CMakeFiles/iTree3DMap.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/iTree3DMap.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/test-pipeline/SfM_pipeline/main.cpp > CMakeFiles/iTree3DMap.dir/main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/SfM_pipeline/main.cpp > CMakeFiles/iTree3DMap.dir/main.cpp.i
 
 CMakeFiles/iTree3DMap.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/iTree3DMap.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/test-pipeline/SfM_pipeline/main.cpp -o CMakeFiles/iTree3DMap.dir/main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/SfM_pipeline/main.cpp -o CMakeFiles/iTree3DMap.dir/main.cpp.s
 
 # Object files for target iTree3DMap
 iTree3DMap_OBJECTS = \
@@ -183,7 +183,7 @@ iTree3DMap: /usr/lib/x86_64-linux-gnu/libpng.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libtiff.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libexpat.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libflann_cpp.so
-iTree3DMap: /usr/local/lib/libceres.a
+iTree3DMap: /usr/lib/libceres.so.1.14.0
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libfreetype.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libz.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libexpat.so
@@ -320,24 +320,6 @@ iTree3DMap: /usr/lib/x86_64-linux-gnu/libpcl_octree.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libpcl_common.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libglog.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libspqr.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libcholmod.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libccolamd.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libcamd.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libcolamd.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libamd.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/liblapack.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libf77blas.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libatlas.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/librt.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libcxsparse.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/liblapack.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libf77blas.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libatlas.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/librt.so
-iTree3DMap: /usr/lib/x86_64-linux-gnu/libcxsparse.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libvtkDomainsChemistry-7.1.so.7.1p.1
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libvtkFiltersFlowPaths-7.1.so.7.1p.1
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
@@ -424,7 +406,7 @@ iTree3DMap: /usr/lib/x86_64-linux-gnu/libfreetype.so
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libvtkCommonCore-7.1.so.7.1p.1
 iTree3DMap: /usr/lib/x86_64-linux-gnu/libvtksys-7.1.so.7.1p.1
 iTree3DMap: CMakeFiles/iTree3DMap.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable iTree3DMap"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/workspaces/SfM_pipeline/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable iTree3DMap"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/iTree3DMap.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -437,6 +419,6 @@ CMakeFiles/iTree3DMap.dir/clean:
 .PHONY : CMakeFiles/iTree3DMap.dir/clean
 
 CMakeFiles/iTree3DMap.dir/depend:
-	cd /workspaces/test-pipeline/SfM_pipeline/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /workspaces/test-pipeline/SfM_pipeline /workspaces/test-pipeline/SfM_pipeline /workspaces/test-pipeline/SfM_pipeline/build /workspaces/test-pipeline/SfM_pipeline/build /workspaces/test-pipeline/SfM_pipeline/build/CMakeFiles/iTree3DMap.dir/DependInfo.cmake --color=$(COLOR)
+	cd /workspaces/SfM_pipeline/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /workspaces/SfM_pipeline /workspaces/SfM_pipeline /workspaces/SfM_pipeline/build /workspaces/SfM_pipeline/build /workspaces/SfM_pipeline/build/CMakeFiles/iTree3DMap.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/iTree3DMap.dir/depend
 

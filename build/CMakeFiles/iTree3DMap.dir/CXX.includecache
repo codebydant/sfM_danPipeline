@@ -4746,15 +4746,15 @@ opencv2/xfeatures2d/nonfree.hpp
 opencv2/features2d.hpp
 /usr/local/include/opencv4/opencv2/xfeatures2d/opencv2/features2d.hpp
 
-/workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
+/workspaces/SfM_pipeline/include/BundleAdjustment.h
 Segmentation.h
-/workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
+/workspaces/SfM_pipeline/include/Segmentation.h
 
-/workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
+/workspaces/SfM_pipeline/include/DendrometryE.h
 BundleAdjustment.h
-/workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
+/workspaces/SfM_pipeline/include/BundleAdjustment.h
 
-/workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
+/workspaces/SfM_pipeline/include/Segmentation.h
 pcl/search/search.h
 -
 pcl/search/kdtree.h
@@ -4764,9 +4764,9 @@ pcl/filters/passthrough.h
 pcl/segmentation/region_growing_rgb.h
 -
 Utilities.h
-/workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
+/workspaces/SfM_pipeline/include/Utilities.h
 
-/workspaces/test-pipeline/SfM_pipeline/include/Sfm.h
+/workspaces/SfM_pipeline/include/Sfm.h
 iostream
 -
 string
@@ -4782,11 +4782,11 @@ boost/algorithm/algorithm.hpp
 boost/thread/thread.hpp
 -
 DendrometryE.h
-/workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
+/workspaces/SfM_pipeline/include/DendrometryE.h
 chrono
 -
 
-/workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
+/workspaces/SfM_pipeline/include/Utilities.h
 opencv2/opencv.hpp
 -
 opencv2/xfeatures2d.hpp
@@ -4824,9 +4824,29 @@ pcl/surface/poisson.h
 pcl/common/common.h
 -
 
-/workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp
+/workspaces/SfM_pipeline/main.cpp
+include/Sfm.h
+/workspaces/SfM_pipeline/include/Sfm.h
+
+/workspaces/SfM_pipeline/src/BundleAdjustment.cpp
+../include/BundleAdjustment.h
+/workspaces/SfM_pipeline/include/BundleAdjustment.h
+ceres/ceres.h
+-
+ceres/rotation.h
+-
+
+/workspaces/SfM_pipeline/src/DendrometryE.cpp
+../include/DendrometryE.h
+/workspaces/SfM_pipeline/include/DendrometryE.h
+
+/workspaces/SfM_pipeline/src/Segmentation.cpp
+../include/Segmentation.h
+/workspaces/SfM_pipeline/include/Segmentation.h
+
+/workspaces/SfM_pipeline/src/Sfm.cpp
 ../include/Sfm.h
-/workspaces/test-pipeline/SfM_pipeline/include/Sfm.h
+/workspaces/SfM_pipeline/include/Sfm.h
 opencv2/highgui/highgui.hpp
 -
 

@@ -610,12 +610,12 @@ CMakeFiles/iTree3DMap.dir/main.cpp.o
  /usr/local/include/opencv4/opencv2/videostab/wobble_suppression.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d/nonfree.hpp
- /workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
- /workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
- /workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
- /workspaces/test-pipeline/SfM_pipeline/include/Sfm.h
- /workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
- /workspaces/test-pipeline/SfM_pipeline/main.cpp
+ /workspaces/SfM_pipeline/include/BundleAdjustment.h
+ /workspaces/SfM_pipeline/include/DendrometryE.h
+ /workspaces/SfM_pipeline/include/Segmentation.h
+ /workspaces/SfM_pipeline/include/Sfm.h
+ /workspaces/SfM_pipeline/include/Utilities.h
+ /workspaces/SfM_pipeline/main.cpp
 CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o
  /usr/include/eigen3/Eigen/Cholesky
  /usr/include/eigen3/Eigen/Core
@@ -1225,10 +1225,10 @@ CMakeFiles/iTree3DMap.dir/src/BundleAdjustment.cpp.o
  /usr/local/include/opencv4/opencv2/videostab/wobble_suppression.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d/nonfree.hpp
- /workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
- /workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
- /workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
- /workspaces/test-pipeline/SfM_pipeline/src/BundleAdjustment.cpp
+ /workspaces/SfM_pipeline/include/BundleAdjustment.h
+ /workspaces/SfM_pipeline/include/Segmentation.h
+ /workspaces/SfM_pipeline/include/Utilities.h
+ /workspaces/SfM_pipeline/src/BundleAdjustment.cpp
 CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o
  /usr/include/eigen3/Eigen/Cholesky
  /usr/include/eigen3/Eigen/Core
@@ -1838,11 +1838,11 @@ CMakeFiles/iTree3DMap.dir/src/DendrometryE.cpp.o
  /usr/local/include/opencv4/opencv2/videostab/wobble_suppression.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d/nonfree.hpp
- /workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
- /workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
- /workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
- /workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
- /workspaces/test-pipeline/SfM_pipeline/src/DendrometryE.cpp
+ /workspaces/SfM_pipeline/include/BundleAdjustment.h
+ /workspaces/SfM_pipeline/include/DendrometryE.h
+ /workspaces/SfM_pipeline/include/Segmentation.h
+ /workspaces/SfM_pipeline/include/Utilities.h
+ /workspaces/SfM_pipeline/src/DendrometryE.cpp
 CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o
  /usr/include/eigen3/Eigen/Cholesky
  /usr/include/eigen3/Eigen/Core
@@ -2452,9 +2452,9 @@ CMakeFiles/iTree3DMap.dir/src/Segmentation.cpp.o
  /usr/local/include/opencv4/opencv2/videostab/wobble_suppression.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d/nonfree.hpp
- /workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
- /workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
- /workspaces/test-pipeline/SfM_pipeline/src/Segmentation.cpp
+ /workspaces/SfM_pipeline/include/Segmentation.h
+ /workspaces/SfM_pipeline/include/Utilities.h
+ /workspaces/SfM_pipeline/src/Segmentation.cpp
 CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o
  /usr/include/eigen3/Eigen/Cholesky
  /usr/include/eigen3/Eigen/Core
@@ -3065,9 +3065,9 @@ CMakeFiles/iTree3DMap.dir/src/Sfm.cpp.o
  /usr/local/include/opencv4/opencv2/videostab/wobble_suppression.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d.hpp
  /usr/local/include/opencv4/opencv2/xfeatures2d/nonfree.hpp
- /workspaces/test-pipeline/SfM_pipeline/include/BundleAdjustment.h
- /workspaces/test-pipeline/SfM_pipeline/include/DendrometryE.h
- /workspaces/test-pipeline/SfM_pipeline/include/Segmentation.h
- /workspaces/test-pipeline/SfM_pipeline/include/Sfm.h
- /workspaces/test-pipeline/SfM_pipeline/include/Utilities.h
- /workspaces/test-pipeline/SfM_pipeline/src/Sfm.cpp
+ /workspaces/SfM_pipeline/include/BundleAdjustment.h
+ /workspaces/SfM_pipeline/include/DendrometryE.h
+ /workspaces/SfM_pipeline/include/Segmentation.h
+ /workspaces/SfM_pipeline/include/Sfm.h
+ /workspaces/SfM_pipeline/include/Utilities.h
+ /workspaces/SfM_pipeline/src/Sfm.cpp
