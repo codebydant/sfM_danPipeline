@@ -6,7 +6,7 @@ RUN apt-get install -y \
     python3-pip \
     libceres-dev \
     libpcl-dev \
-    libvtk7-dev \
+    libvtk7-dev
     # gdb \
     # gdbserver
 
