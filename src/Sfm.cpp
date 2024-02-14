@@ -1419,6 +1419,7 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		std::vector<uchar> vstatus(i_pts.size());
 		std::vector<float> verror(i_pts.size());
 		cv::calcOpticalFlowPyrLK(prevgray, gray, i_pts, j_pts, vstatus, verror);
+        std::cout << "*BLAHBLAH 1422*" << std::endl; // DEBUG
 
 		double thresh = 1.0;
 		std::vector<cv::Point2f> to_find;
@@ -1437,9 +1438,17 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
     // cv::Mat reshapedMat = to_find_flat.reshape(1);
     // to_find_flat = reshapedMat;
 
-		cv::Mat to_find_Mat = cv::Mat(to_find).reshape(1, to_find.size());
+      std::cout << "*tries to clone*" << std::endl; // DEBUG
+
+		cv::Mat to_find_Mat = cv::Mat(to_find);
     cv::Mat to_find_clone = to_find_Mat.clone();
+    if (to_find_clone.isContinuous()) {
+    std::cout << "The to_find_clone matrix is continuous." << std::endl;
+} else {
+    std::cout << "The to_find_clone matrix is not continuous." << std::endl;
+} //DEBUG
     cv::Mat to_find_flat = to_find_clone.reshape(1, to_find_clone.total());
+      std::cout << "*IMAGE CLONED line 1444*" << std::endl; // DEBUG
     
 
 		std::vector<cv::Point2f> j_pts_to_find ;
@@ -1447,9 +1456,16 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 		//keypoints2F(imgpts[idx_j], j_pts_to_find);
 		// cv::Mat j_pts_flat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
 
-    cv::Mat j_pts_Mat = cv::Mat(j_pts_to_find).reshape(1, j_pts_to_find.size());
+    cv::Mat j_pts_Mat = cv::Mat(j_pts_to_find);
     cv::Mat j_pts_clone = j_pts_Mat.clone();
+    if (j_pts_clone.isContinuous()) {
+    std::cout << "The j_pts_clone matrix is continuous." << std::endl;
+} else {
+    std::cout << "The j_pts_clone matrix is not continuous." << std::endl;
+} //DEBUG
     cv::Mat j_pts_flat = j_pts_clone.reshape(1, j_pts_clone.total());
+    std::cout << "*IMAGE CLONED 1455*" << std::endl; // DEBUG
+
 
     //for radiusMatch prerequisites
     to_find_flat.convertTo(to_find_flat, CV_32F);
