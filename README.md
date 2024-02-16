@@ -16,36 +16,22 @@ A simple incremental SFM pipeline for 3D reconstruction of a tree with bundle ad
 
 <img src="./imgs/example.png" align="center" height="500" width="950"><br>
 
-### Resources
 
-* Homepage: <http://opencv.org>
-* Docs: <http://docs.opencv.org/master/>
 
-## Build 
-
-To build use CMake minimum required 3.5.1 : https://github.com/Kitware/CMake
-
-### Prerequisite
-- OpenCV 3.4.1: https://github.com/opencv/opencv/tree/3.4.1
-- PCL 1.8.1: https://github.com/PointCloudLibrary/pcl/tree/pcl-1.8.1
 
 ### Compilation
 * Set "YOUR OWN" PCL Build DIR in CMakeList.txt e.g: **/opt/pcl-1.8.1/build** and save it.
 * Set "YOUR OWN" OpenCV Build DIR in CMakeList.txt e.g: **/opt/opencv-3.4.1/build** and save it.
 * Create a "build" folder
 
-in the main folder:
+in the build folder:
 
-    cd /build  
-    cmake ../
+    cd build/  
+    cmake ..
     make
+    ./iTree3DMap
  	 
-### Test
-	cd /build/bin
-	./iTree3DMap
 
-*Note:*
-If OpenCV is not installed (just compiled). please set the path to the current build directory in the CMakeList.txt file.
 
 
 

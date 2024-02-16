@@ -738,13 +738,16 @@ bool StructFromMotion::getCameraPose(const Intrinsics& intrinsics,const int& idx
       return false;
   }
 
+  cout<<"1"<<endl;
   // ESSENTIAL MATRIX
   cv::Mat mask;
   cv::Mat cam_matrix = cv::Mat(intrinsics.K);
   cv::Mat E = cv::findEssentialMat(alignedLeft, alignedRight,
                                    cam_matrix,cv::RANSAC,0.999, 1.0,mask);
 
-  std::cout << "Essential matrix:\n" << E << std::endl;
+
+  cout<<"2"<<endl;
+  std::cout << "Essential matrix:\n" << E << std::endl; // looks like the E matrix is empty, leading to errors downstream
 
   // CAMERA POSE -> Rotation and Traslation (MOTION ESTIMATION)
   cv::Mat R,T;
@@ -752,9 +755,9 @@ bool StructFromMotion::getCameraPose(const Intrinsics& intrinsics,const int& idx
   double cx = intrinsics.K.at<double>(0,2);
   double cy = intrinsics.K.at<double>(1,2);
   cv::Point2d pp = cv::Point2d(cx,cy);
-
-  cv::recoverPose(E,alignedLeft, alignedRight,R,T,fx,pp,mask);
-
+  cout<<"3"<<endl;
+  cv::recoverPose(E,alignedLeft, alignedRight,R,T,fx,pp,mask);  // this is causing the error
+  cout<<"4"<<endl;
   bool success = CheckCoherentRotation(R);
 
   std::cout << "R:\n" << R << std::endl;
