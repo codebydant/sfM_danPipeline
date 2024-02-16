@@ -1,3 +1,0 @@
-/workspaces/SfM_pipeline/build/CMakeFiles/rebuild_cache.dir
-/workspaces/SfM_pipeline/build/CMakeFiles/edit_cache.dir
-/workspaces/SfM_pipeline/build/CMakeFiles/iTree3DMap.dir
