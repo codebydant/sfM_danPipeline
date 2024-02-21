@@ -200,46 +200,49 @@ bool StructFromMotion::imagesLOAD(const std::string&  directoryPath){
 //===============================================
 //GET CAMERA MATRIX
 //===============================================
-bool StructFromMotion::getCameraMatrix(const std::string str){
+bool StructFromMotion::getCameraMatrix(const std::string fileName){
 
     std::cout << "Getting camera matrix..." << std::endl;
     cv::Mat intrinsics;
     cv::Mat cameraDistCoeffs;
 
     /*Read camera calibration file*/
-    cv::FileStorage fs(str, );
-    // cv::FileStorage fs(str, cv::FileStorage::READ); // original
+    cv::FileStorage fs;
+    fs.open(fileName, cv::FileStorage::READ);
+
+    // Checks if file did not open
+    if (!fs.isOpened()) {
+      std::cerr << "Failed to open: " << fileName << std::endl;
+    return false;
+    } else {
+      std::cout << "Opened: " << fileName << std::endl;
+    }
 
     /*Get data from tags: Camera_Matrix and Distortion_Coefficients*/
-    fs["Camera_Matrix"] >> intrinsics;
+    fs["Camera_Matrix"] >> intrinsics; 
     fs["Distortion_Coefficients"] >> cameraDistCoeffs;
 
-    if(intrinsics.empty() or intrinsics.at<double>(2,0) !=0){
+    if(intrinsics.empty() or intrinsics.at<float>(2,0) !=0){
         std::cerr << "Error: no found or invalid camera calibration file.xml" << std::endl;
         return false;
     }
 
-    //1520.0    0.0      302.2
-    //  0.0     1520.0   246.87
-    //  0.0      0.0      1.0
-    double fx = 1520; //intrinsics.at<double>(0,0);
-    double fy = 1520; //intrinsics.at<double>(1,1);
-    double cx = 302.2; //intrinsics.at<double>(0,2);
-    double cy = 246.87; //intrinsics.at<double>(1,2);
+    float fx = intrinsics.at<float>(0,0);
+    float fy = intrinsics.at<float>(1,1);
+    float cx = intrinsics.at<float>(0,2);
+    float cy = intrinsics.at<float>(1,2);
 
-    cv::Mat_<double> cam_matrix = (cv::Mat_<double>(3, 3) << fx, 0, cx,
+    cv::Mat_<float> cam_matrix = (cv::Mat_<float>(3, 3) << fx, 0, cx,
                                                              0, fy, cy,
                                                              0,  0,  1);
 
-    std::cout << "cam matrix 226" << cam_matrix << std::endl; //DEBUG wasn't called
+    float k1 = cameraDistCoeffs.at<float>(0,0);
+    float k2 = cameraDistCoeffs.at<float>(0,1);
+    float k3 = cameraDistCoeffs.at<float>(0,2);
+    float p1 = cameraDistCoeffs.at<float>(0,3);
+    float p2 = cameraDistCoeffs.at<float>(0,4);
 
-    double k1 = cameraDistCoeffs.at<double>(0,0);
-    double k2 = cameraDistCoeffs.at<double>(0,1);
-    double k3 = cameraDistCoeffs.at<double>(0,2);
-    double p1 = cameraDistCoeffs.at<double>(0,3);
-    double p2 = cameraDistCoeffs.at<double>(0,4);
-
-    cv::Mat_<double> distortionC = (cv::Mat_<double>(1, 5) << k1, k2, k3, p1, p2);
+    cv::Mat_<float> distortionC = (cv::Mat_<float>(1, 5) << k1, k2, k3, p1, p2);
 
     /*Fill local variables with input data*/
     cameraMatrix.K = cam_matrix;                  //Matrix K (3x3)
@@ -748,7 +751,6 @@ bool StructFromMotion::getCameraPose(const Intrinsics& intrinsics,const int& idx
   // ESSENTIAL MATRIX
   cv::Mat mask;
   cv::Mat cam_matrix = cv::Mat(intrinsics.K);
-  std::cout << intrinsics.K << std::endl; //DEBUG 
   cv::Mat E = cv::findEssentialMat(alignedLeft, alignedRight,
                                    cam_matrix,cv::RANSAC,0.999, 1.0,mask);
 
@@ -1453,13 +1455,7 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 
 		cv::Mat to_find_Mat = cv::Mat(to_find);
     cv::Mat to_find_clone = to_find_Mat.clone();
-//     if (to_find_clone.isContinuous()) {
-//     std::cout << "The to_find_clone matrix is continuous." << std::endl;
-// } else {
-//     std::cout << "The to_find_clone matrix is not continuous." << std::endl;
-// } //DEBUG wasn't called
     cv::Mat to_find_flat = to_find_clone.reshape(1, to_find_clone.total());
-      // std::cout << "*IMAGE CLONED line 1444*" << std::endl; // DEBUG
     
 
 		std::vector<cv::Point2f> j_pts_to_find ;
@@ -1469,14 +1465,7 @@ void StructFromMotion::MatchFeatures(int idx_i, int idx_j, std::vector<cv::DMatc
 
     cv::Mat j_pts_Mat = cv::Mat(j_pts_to_find);
     cv::Mat j_pts_clone = j_pts_Mat.clone();
-//     if (j_pts_clone.isContinuous()) {
-//     std::cout << "The j_pts_clone matrix is continuous." << std::endl;
-// } else {
-//     std::cout << "The j_pts_clone matrix is not continuous." << std::endl;
-// } //DEBUG wasn't called
     cv::Mat j_pts_flat = j_pts_clone.reshape(1, j_pts_clone.total());
-    // std::cout << "*IMAGE CLONED 1455*" << std::endl; // DEBUG
-
 
     //for radiusMatch prerequisites
     to_find_flat.convertTo(to_find_flat, CV_32F);

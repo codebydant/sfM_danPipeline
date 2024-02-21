@@ -57,8 +57,6 @@ int main(int argc, char **argv){
   STEP X: INPUT CAMERA FILE
   **************************/
   success = sf.getCameraMatrix("../data/temple/camera_calibration_template.xml");
-  std::cout << "calling getCameraMatrix" << std::endl;
-  std::cerr << "ERROR" << std::endl;
   if(not success){
       std::cerr << "Error: camera calibration file is not valid." << std::endl;
       return -1;
