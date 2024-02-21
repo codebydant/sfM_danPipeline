@@ -58,16 +58,18 @@ bool StructFromMotion::map3D(){
   while(!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
   }
 
+  //WHAT ARE THESE FUNCTIONS DOING? DEBUG
   // **(7) DENSIFIYING POINTCLOUD
   int dont_care;
-  dont_care = std::system("../../programs/pmvs2 denseCloud/ options.txt");
+  dont_care = std::system("../build/denseCloud/options.txt"); //original 
+  // dont_care = std::system("../../programs/pmvs2"); //changed permission denied
   if(dont_care > 0){
     std::cout << "Failed. ./pmvs2 no found" << std::endl;
     std::exit(-1);
   }
 
   // **(8) CONVERT PLY TO PCD
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPLY (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudPLY (new pcl::PointCloud<pcl::PointXYZRGB>); //setting color DEBUG?
   pcl::PLYReader ply;
   ply.read("denseCloud/models/options.txt.ply",*cloudPLY);
   if(cloudPLY->size()<=0){
@@ -1402,7 +1404,7 @@ void StructFromMotion::create_mesh(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,pc
 void StructFromMotion::vizualizeMesh(pcl::PolygonMesh &mesh){
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("MAP3D MESH"));
-  viewer->setBackgroundColor (0, 0, 0);
+  viewer->setBackgroundColor (255, 0, 255); //changed color to pink
   viewer->addPolygonMesh(mesh,"meshes",0);
   viewer->addCoordinateSystem (1.0);
   viewer->initCameraParameters ();
