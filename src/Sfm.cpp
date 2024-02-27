@@ -472,7 +472,7 @@ bool StructFromMotion::baseReconstruction(){
       cv::putText(matchImage, "Image" + std::to_string(trainImage),
                   cv::Point(670,matchImage.rows-11),cv::FONT_ITALIC,0.5,cv::Scalar(0,0,0),2);
       cv::imshow("Best pair matching", matchImage);
-      cv::waitKey(0);
+      // cv::waitKey(0);
       cv::destroyAllWindows();
 
       std::vector<Point3D> pointcloud;

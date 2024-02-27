@@ -35,3 +35,14 @@ in the build folder:
 
 
 
+### debug 
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+file ./iTree3DMap
+apt-get update && apt-get install -y gdb gdbserver
+gdb ./iTree3DMap
+break main  # adds breakpoint
+run
+continue 
+info locals infor args
+quit # quit gdb
